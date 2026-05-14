@@ -349,8 +349,30 @@ export async function getFeeSummary(
   studentId: string,
   organizationId: string,
 ): Promise<FeeSummary> {
-  // PRIMARY: read student_fee_terms by student_id (matches CRM logic).
-  let terms = await fetchStudentFeeTerms(studentId);
+  // PRIMARY: read student_fee_terms scoped to the LATEST override (matches CRM, which
+  // shows only the active/most-recent override — not the sum of historical overrides).
+  let terms: FeeTermRow[] = [];
+  const { data: latestOverride } = await parentSupabase
+    .from("student_fee_overrides")
+    .select("id")
+    .eq("student_id", studentId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const latestOverrideId = (latestOverride as { id?: string } | null)?.id ?? null;
+  if (latestOverrideId) {
+    const { data: ovTerms } = await parentSupabase
+      .from("student_fee_terms")
+      .select(
+        "term_amount, paid_amount, due_amount, due_date, status, late_fee_paid, balance_amount",
+      )
+      .eq("student_fee_override_id", latestOverrideId);
+    terms = (ovTerms ?? []) as FeeTermRow[];
+  }
+  // Secondary fallback: any term directly tied to the student (legacy rows).
+  if (!terms || terms.length === 0) {
+    terms = await fetchStudentFeeTerms(studentId);
+  }
 
   // FALLBACK: if no direct terms, look up via student_fee_overrides.
   if (!terms || terms.length === 0) {
