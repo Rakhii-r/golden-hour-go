@@ -279,124 +279,181 @@ function FeesPage() {
       return next;
     });
 
-  useEffect(() => {
+  // Loads terms (latest override) + per-fee-head items + payments. Mirrors CRM.
+  const loadFeeData = async (signal?: { cancelled: boolean }) => {
     if (!studentId) return;
-    let cancelled = false;
-    (async () => {
-      setPageLoading(true);
 
-      const TERM_COLS = `id, fee_head_id, installment_name, term_amount, paid_amount,
-        balance_amount, due_amount, due_date, status, installment_order, term_number`;
+    // 1. Pick the LATEST override for this student (matches what CRM displays).
+    const { data: latestOverride } = await parentSupabase
+      .from("student_fee_overrides")
+      .select("id")
+      .eq("student_id", studentId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const overrideId = (latestOverride as { id?: string } | null)?.id ?? null;
 
-      // Use same student_id source as getFeeSummary (parent_accounts.student_id)
-      let { data: rawTerms } = await parentSupabase
+    // 2. Parent terms (student_fee_terms). NOTE: this table has no fee_head_id /
+    //    installment_order columns in this schema — selecting them returns 400.
+    type ParentTermRow = {
+      id: string;
+      installment_name: string | null;
+      term_amount: number | string;
+      paid_amount: number | string;
+      balance_amount: number | string | null;
+      due_amount: number | string | null;
+      due_date: string | null;
+      status: string | null;
+      term_number: number;
+    };
+    const TERM_COLS =
+      "id, installment_name, term_amount, paid_amount, balance_amount, due_amount, due_date, status, term_number";
+
+    let parentTerms: ParentTermRow[] = [];
+    if (overrideId) {
+      const { data } = await parentSupabase
+        .from("student_fee_terms")
+        .select(TERM_COLS)
+        .eq("student_fee_override_id", overrideId)
+        .order("term_number", { ascending: true });
+      parentTerms = (data ?? []) as ParentTermRow[];
+    }
+    // Legacy fallback — terms tied directly to student with no override.
+    if (parentTerms.length === 0) {
+      const { data } = await parentSupabase
         .from("student_fee_terms")
         .select(TERM_COLS)
         .eq("student_id", studentId)
-        .order("installment_order", { ascending: true, nullsFirst: false });
+        .order("term_number", { ascending: true });
+      parentTerms = (data ?? []) as ParentTermRow[];
+    }
 
-      // Mirror the exact fallback path used in getFeeSummary
-      if (!rawTerms || rawTerms.length === 0) {
-        const { data: ov } = await parentSupabase
-          .from("student_fee_overrides")
-          .select("id")
-          .eq("student_id", studentId)
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle();
-        const ovId = (ov as { id?: string } | null)?.id;
-        if (ovId) {
-          const { data: ovTerms } = await parentSupabase
-            .from("student_fee_terms")
-            .select(TERM_COLS)
-            .eq("student_fee_override_id", ovId)
-            .order("installment_order", { ascending: true, nullsFirst: false });
-          rawTerms = ovTerms ?? [];
-        }
-      }
+    // 3. Per-fee-head splits (student_fee_term_items) — mirrors CRM "per Fee Head".
+    type ItemRow = {
+      id: string;
+      student_fee_term_id: string | null;
+      fee_head_id: string | null;
+      fee_head_name: string | null;
+      final_amount: number | string | null;
+      paid_amount: number | string | null;
+    };
+    let items: ItemRow[] = [];
+    if (parentTerms.length > 0) {
+      const termIds = parentTerms.map((t) => t.id);
+      const { data: itemRows } = await parentSupabase
+        .from("student_fee_term_items")
+        .select("id, student_fee_term_id, fee_head_id, fee_head_name, final_amount, paid_amount")
+        .in("student_fee_term_id", termIds);
+      items = (itemRows ?? []) as ItemRow[];
+    }
 
-      // Separately fetch fee_heads — fails gracefully if parent has no access
-      const feeHeadIds = [
-        ...new Set(
-          (rawTerms ?? [])
-            .map((t: Record<string, unknown>) => t.fee_head_id as string | null)
-            .filter((id): id is string => !!id),
-        ),
-      ];
-      const feeHeadMap = new Map<string, FeeHead>();
-      if (feeHeadIds.length > 0) {
-        const { data: headRows } = await parentSupabase
-          .from("fee_heads")
-          .select("id, fee_head_name, display_order, is_recurring")
-          .in("id", feeHeadIds);
-        for (const h of headRows ?? []) {
-          feeHeadMap.set((h as FeeHead).id, h as FeeHead);
-        }
-      }
-
-      // Merge fee_heads into each term client-side
-      const mergedTerms: RawTerm[] = (rawTerms ?? []).map((t: Record<string, unknown>) => ({
-        ...(t as Omit<RawTerm, "fee_heads">),
-        fee_heads: t.fee_head_id ? (feeHeadMap.get(t.fee_head_id as string) ?? null) : null,
-      }));
-
-      const { data: p } = await parentSupabase
-        .from("fee_payments")
-        .select("id, amount, payment_date, payment_mode, receipt_number, status, is_deleted")
-        .eq("student_id", studentId)
-        .order("payment_date", { ascending: false });
-
-      if (cancelled) return;
-      setTerms(mergedTerms);
-      setPayments(
-        ((p ?? []) as Array<FeePayment & { is_deleted: boolean | null }>).filter((x) => !x.is_deleted),
-      );
-      setPageLoading(false);
-    })();
-    return () => { cancelled = true; };
-  }, [studentId]);
-
-  const reloadAll = async () => {
-    if (!studentId) return;
-    const TERM_COLS = `id, fee_head_id, installment_name, term_amount, paid_amount,
-      balance_amount, due_amount, due_date, status, installment_order, term_number`;
-    const { data: rawTerms } = await parentSupabase
-      .from("student_fee_terms")
-      .select(TERM_COLS)
-      .eq("student_id", studentId)
-      .order("installment_order", { ascending: true, nullsFirst: false });
-
-    const feeHeadIds = [
-      ...new Set(
-        (rawTerms ?? [])
-          .map((t: Record<string, unknown>) => t.fee_head_id as string | null)
-          .filter((id): id is string => !!id),
-      ),
-    ];
+    // 4. Resolve fee_heads metadata (display_order, is_recurring).
+    const headIds = Array.from(
+      new Set(items.map((i) => i.fee_head_id).filter((x): x is string => !!x)),
+    );
     const feeHeadMap = new Map<string, FeeHead>();
-    if (feeHeadIds.length > 0) {
+    if (headIds.length > 0) {
       const { data: headRows } = await parentSupabase
         .from("fee_heads")
         .select("id, fee_head_name, display_order, is_recurring")
-        .in("id", feeHeadIds);
-      for (const h of headRows ?? []) {
-        feeHeadMap.set((h as FeeHead).id, h as FeeHead);
+        .in("id", headIds);
+      for (const h of (headRows ?? []) as FeeHead[]) feeHeadMap.set(h.id, h);
+    }
+
+    // 5. Build virtual RawTerm rows: one per (parent term × item). Falls back
+    //    to one synthetic row per parent term when no items exist.
+    const itemsByTerm = new Map<string, ItemRow[]>();
+    for (const it of items) {
+      if (!it.student_fee_term_id) continue;
+      const arr = itemsByTerm.get(it.student_fee_term_id) ?? [];
+      arr.push(it);
+      itemsByTerm.set(it.student_fee_term_id, arr);
+    }
+
+    const merged: RawTerm[] = [];
+    for (const pt of parentTerms) {
+      const remaining =
+        pt.balance_amount != null
+          ? Number(pt.balance_amount)
+          : pt.due_amount != null
+            ? Number(pt.due_amount)
+            : Math.max(0, Number(pt.term_amount) - Number(pt.paid_amount));
+      const its = itemsByTerm.get(pt.id) ?? [];
+      if (its.length === 0) {
+        merged.push({
+          id: pt.id,
+          parent_term_id: pt.id,
+          fee_head_id: null,
+          installment_name: pt.installment_name,
+          term_amount: Number(pt.term_amount),
+          paid_amount: Number(pt.paid_amount),
+          balance_amount: pt.balance_amount != null ? Number(pt.balance_amount) : null,
+          due_amount: pt.due_amount != null ? Number(pt.due_amount) : null,
+          due_date: pt.due_date,
+          status: pt.status ?? "pending",
+          installment_order: null,
+          term_number: pt.term_number,
+          fee_heads: null,
+          parent_term_balance: remaining,
+        });
+      } else {
+        for (const it of its) {
+          const total = Number(it.final_amount ?? 0);
+          const paid = Number(it.paid_amount ?? 0);
+          const bal = Math.max(0, total - paid);
+          merged.push({
+            id: it.id,
+            parent_term_id: pt.id,
+            fee_head_id: it.fee_head_id,
+            installment_name: pt.installment_name,
+            term_amount: total,
+            paid_amount: paid,
+            balance_amount: bal,
+            due_amount: null,
+            due_date: pt.due_date,
+            status: bal <= 0 ? "paid" : paid > 0 ? "partial" : "pending",
+            installment_order: null,
+            term_number: pt.term_number,
+            fee_heads:
+              (it.fee_head_id ? feeHeadMap.get(it.fee_head_id) : undefined) ??
+              (it.fee_head_name
+                ? { id: it.fee_head_id ?? it.id, fee_head_name: it.fee_head_name, display_order: 99, is_recurring: true }
+                : null),
+            parent_term_balance: remaining,
+          });
+        }
       }
     }
-    const mergedTerms: RawTerm[] = (rawTerms ?? []).map((t: Record<string, unknown>) => ({
-      ...(t as Omit<RawTerm, "fee_heads">),
-      fee_heads: t.fee_head_id ? (feeHeadMap.get(t.fee_head_id as string) ?? null) : null,
-    }));
 
-    setTerms(mergedTerms);
+    // 6. Payments (recent transactions).
     const { data: p } = await parentSupabase
       .from("fee_payments")
       .select("id, amount, payment_date, payment_mode, receipt_number, status, is_deleted")
       .eq("student_id", studentId)
       .order("payment_date", { ascending: false });
+
+    if (signal?.cancelled) return;
+    setTerms(merged);
     setPayments(
       ((p ?? []) as Array<FeePayment & { is_deleted: boolean | null }>).filter((x) => !x.is_deleted),
     );
+  };
+
+  useEffect(() => {
+    if (!studentId) return;
+    const signal = { cancelled: false };
+    setPageLoading(true);
+    loadFeeData(signal).finally(() => {
+      if (!signal.cancelled) setPageLoading(false);
+    });
+    return () => {
+      signal.cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [studentId]);
+
+  const reloadAll = async () => {
+    await loadFeeData();
     await reload();
   };
 
