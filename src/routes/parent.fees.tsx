@@ -683,11 +683,11 @@ function FeesPage() {
                                       {payable ? (
                                         <button
                                           onClick={() => handlePay(t)}
-                                          disabled={payingId === t.id}
+                                          disabled={payingId === t.parent_term_id}
                                           className="glass-btn inline-flex items-center gap-1 px-3 py-1 text-xs disabled:opacity-60"
                                         >
                                           <CreditCard className="h-3 w-3" />
-                                          {payingId === t.id ? "Processing…" : "Pay"}
+                                          {payingId === t.parent_term_id ? "Processing…" : "Pay"}
                                         </button>
                                       ) : (
                                         <span className="text-xs parent-muted">—</span>
