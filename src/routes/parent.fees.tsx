@@ -128,8 +128,12 @@ interface FeeHead {
   is_recurring: boolean;
 }
 
+// A "RawTerm" is a virtual row representing one fee-head's slice within one
+// parent term (student_fee_terms row). When per-head items are not available,
+// it represents the whole parent term itself.
 interface RawTerm {
-  id: string;
+  id: string;                  // virtual id (item id, or parent term id as fallback)
+  parent_term_id: string;      // student_fee_terms.id (used by Razorpay)
   fee_head_id: string | null;
   installment_name: string | null;
   term_amount: number;
@@ -141,6 +145,7 @@ interface RawTerm {
   installment_order: number | null;
   term_number: number;
   fee_heads: FeeHead | null;
+  parent_term_balance: number; // remaining for the whole parent term
 }
 
 interface FeeHeadGroup {
@@ -154,8 +159,8 @@ interface FeeHeadGroup {
 }
 
 interface MonthGroup {
-  monthKey: string;        // "2026-06"
-  monthLabel: string;      // "June 2026"
+  monthKey: string;
+  monthLabel: string;
   entries: Array<{ due_date: string; label: string; amount: number }>;
   total: number;
 }
