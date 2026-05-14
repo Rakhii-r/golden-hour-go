@@ -468,7 +468,7 @@ function FeesPage() {
       const ok = await loadRazorpay();
       if (!ok) throw new Error("Failed to load Razorpay");
       const data = await invokeParentFunction<RazorpayOrderResponse>("razorpay-create-order", {
-        installment_id: term.id,
+        installment_id: term.parent_term_id,
         amount: balance,
       });
       const rzp = new window.Razorpay({
