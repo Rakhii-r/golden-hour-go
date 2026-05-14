@@ -9,38 +9,205 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as AccessDeniedRouteImport } from './routes/access-denied'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ParentIndexRouteImport } from './routes/parent.index'
+import { Route as ParentTimetableRouteImport } from './routes/parent.timetable'
+import { Route as ParentProfileRouteImport } from './routes/parent.profile'
+import { Route as ParentMarksRouteImport } from './routes/parent.marks'
+import { Route as ParentForgotPasswordRouteImport } from './routes/parent.forgot-password'
+import { Route as ParentFeesRouteImport } from './routes/parent.fees'
+import { Route as ParentDashboardRouteImport } from './routes/parent.dashboard'
+import { Route as ParentCircularsRouteImport } from './routes/parent.circulars'
+import { Route as ParentChangePasswordRouteImport } from './routes/parent.change-password'
+import { Route as ParentAttendanceRouteImport } from './routes/parent.attendance'
+import { Route as ParentAssignmentsRouteImport } from './routes/parent.assignments'
 
+const AccessDeniedRoute = AccessDeniedRouteImport.update({
+  id: '/access-denied',
+  path: '/access-denied',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ParentIndexRoute = ParentIndexRouteImport.update({
+  id: '/parent/',
+  path: '/parent/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ParentTimetableRoute = ParentTimetableRouteImport.update({
+  id: '/parent/timetable',
+  path: '/parent/timetable',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ParentProfileRoute = ParentProfileRouteImport.update({
+  id: '/parent/profile',
+  path: '/parent/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ParentMarksRoute = ParentMarksRouteImport.update({
+  id: '/parent/marks',
+  path: '/parent/marks',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ParentForgotPasswordRoute = ParentForgotPasswordRouteImport.update({
+  id: '/parent/forgot-password',
+  path: '/parent/forgot-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ParentFeesRoute = ParentFeesRouteImport.update({
+  id: '/parent/fees',
+  path: '/parent/fees',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ParentDashboardRoute = ParentDashboardRouteImport.update({
+  id: '/parent/dashboard',
+  path: '/parent/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ParentCircularsRoute = ParentCircularsRouteImport.update({
+  id: '/parent/circulars',
+  path: '/parent/circulars',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ParentChangePasswordRoute = ParentChangePasswordRouteImport.update({
+  id: '/parent/change-password',
+  path: '/parent/change-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ParentAttendanceRoute = ParentAttendanceRouteImport.update({
+  id: '/parent/attendance',
+  path: '/parent/attendance',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ParentAssignmentsRoute = ParentAssignmentsRouteImport.update({
+  id: '/parent/assignments',
+  path: '/parent/assignments',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/access-denied': typeof AccessDeniedRoute
+  '/parent/assignments': typeof ParentAssignmentsRoute
+  '/parent/attendance': typeof ParentAttendanceRoute
+  '/parent/change-password': typeof ParentChangePasswordRoute
+  '/parent/circulars': typeof ParentCircularsRoute
+  '/parent/dashboard': typeof ParentDashboardRoute
+  '/parent/fees': typeof ParentFeesRoute
+  '/parent/forgot-password': typeof ParentForgotPasswordRoute
+  '/parent/marks': typeof ParentMarksRoute
+  '/parent/profile': typeof ParentProfileRoute
+  '/parent/timetable': typeof ParentTimetableRoute
+  '/parent/': typeof ParentIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/access-denied': typeof AccessDeniedRoute
+  '/parent/assignments': typeof ParentAssignmentsRoute
+  '/parent/attendance': typeof ParentAttendanceRoute
+  '/parent/change-password': typeof ParentChangePasswordRoute
+  '/parent/circulars': typeof ParentCircularsRoute
+  '/parent/dashboard': typeof ParentDashboardRoute
+  '/parent/fees': typeof ParentFeesRoute
+  '/parent/forgot-password': typeof ParentForgotPasswordRoute
+  '/parent/marks': typeof ParentMarksRoute
+  '/parent/profile': typeof ParentProfileRoute
+  '/parent/timetable': typeof ParentTimetableRoute
+  '/parent': typeof ParentIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/access-denied': typeof AccessDeniedRoute
+  '/parent/assignments': typeof ParentAssignmentsRoute
+  '/parent/attendance': typeof ParentAttendanceRoute
+  '/parent/change-password': typeof ParentChangePasswordRoute
+  '/parent/circulars': typeof ParentCircularsRoute
+  '/parent/dashboard': typeof ParentDashboardRoute
+  '/parent/fees': typeof ParentFeesRoute
+  '/parent/forgot-password': typeof ParentForgotPasswordRoute
+  '/parent/marks': typeof ParentMarksRoute
+  '/parent/profile': typeof ParentProfileRoute
+  '/parent/timetable': typeof ParentTimetableRoute
+  '/parent/': typeof ParentIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/access-denied'
+    | '/parent/assignments'
+    | '/parent/attendance'
+    | '/parent/change-password'
+    | '/parent/circulars'
+    | '/parent/dashboard'
+    | '/parent/fees'
+    | '/parent/forgot-password'
+    | '/parent/marks'
+    | '/parent/profile'
+    | '/parent/timetable'
+    | '/parent/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/access-denied'
+    | '/parent/assignments'
+    | '/parent/attendance'
+    | '/parent/change-password'
+    | '/parent/circulars'
+    | '/parent/dashboard'
+    | '/parent/fees'
+    | '/parent/forgot-password'
+    | '/parent/marks'
+    | '/parent/profile'
+    | '/parent/timetable'
+    | '/parent'
+  id:
+    | '__root__'
+    | '/'
+    | '/access-denied'
+    | '/parent/assignments'
+    | '/parent/attendance'
+    | '/parent/change-password'
+    | '/parent/circulars'
+    | '/parent/dashboard'
+    | '/parent/fees'
+    | '/parent/forgot-password'
+    | '/parent/marks'
+    | '/parent/profile'
+    | '/parent/timetable'
+    | '/parent/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AccessDeniedRoute: typeof AccessDeniedRoute
+  ParentAssignmentsRoute: typeof ParentAssignmentsRoute
+  ParentAttendanceRoute: typeof ParentAttendanceRoute
+  ParentChangePasswordRoute: typeof ParentChangePasswordRoute
+  ParentCircularsRoute: typeof ParentCircularsRoute
+  ParentDashboardRoute: typeof ParentDashboardRoute
+  ParentFeesRoute: typeof ParentFeesRoute
+  ParentForgotPasswordRoute: typeof ParentForgotPasswordRoute
+  ParentMarksRoute: typeof ParentMarksRoute
+  ParentProfileRoute: typeof ParentProfileRoute
+  ParentTimetableRoute: typeof ParentTimetableRoute
+  ParentIndexRoute: typeof ParentIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/access-denied': {
+      id: '/access-denied'
+      path: '/access-denied'
+      fullPath: '/access-denied'
+      preLoaderRoute: typeof AccessDeniedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,12 +215,110 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/parent/': {
+      id: '/parent/'
+      path: '/parent'
+      fullPath: '/parent/'
+      preLoaderRoute: typeof ParentIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/parent/timetable': {
+      id: '/parent/timetable'
+      path: '/parent/timetable'
+      fullPath: '/parent/timetable'
+      preLoaderRoute: typeof ParentTimetableRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/parent/profile': {
+      id: '/parent/profile'
+      path: '/parent/profile'
+      fullPath: '/parent/profile'
+      preLoaderRoute: typeof ParentProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/parent/marks': {
+      id: '/parent/marks'
+      path: '/parent/marks'
+      fullPath: '/parent/marks'
+      preLoaderRoute: typeof ParentMarksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/parent/forgot-password': {
+      id: '/parent/forgot-password'
+      path: '/parent/forgot-password'
+      fullPath: '/parent/forgot-password'
+      preLoaderRoute: typeof ParentForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/parent/fees': {
+      id: '/parent/fees'
+      path: '/parent/fees'
+      fullPath: '/parent/fees'
+      preLoaderRoute: typeof ParentFeesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/parent/dashboard': {
+      id: '/parent/dashboard'
+      path: '/parent/dashboard'
+      fullPath: '/parent/dashboard'
+      preLoaderRoute: typeof ParentDashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/parent/circulars': {
+      id: '/parent/circulars'
+      path: '/parent/circulars'
+      fullPath: '/parent/circulars'
+      preLoaderRoute: typeof ParentCircularsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/parent/change-password': {
+      id: '/parent/change-password'
+      path: '/parent/change-password'
+      fullPath: '/parent/change-password'
+      preLoaderRoute: typeof ParentChangePasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/parent/attendance': {
+      id: '/parent/attendance'
+      path: '/parent/attendance'
+      fullPath: '/parent/attendance'
+      preLoaderRoute: typeof ParentAttendanceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/parent/assignments': {
+      id: '/parent/assignments'
+      path: '/parent/assignments'
+      fullPath: '/parent/assignments'
+      preLoaderRoute: typeof ParentAssignmentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AccessDeniedRoute: AccessDeniedRoute,
+  ParentAssignmentsRoute: ParentAssignmentsRoute,
+  ParentAttendanceRoute: ParentAttendanceRoute,
+  ParentChangePasswordRoute: ParentChangePasswordRoute,
+  ParentCircularsRoute: ParentCircularsRoute,
+  ParentDashboardRoute: ParentDashboardRoute,
+  ParentFeesRoute: ParentFeesRoute,
+  ParentForgotPasswordRoute: ParentForgotPasswordRoute,
+  ParentMarksRoute: ParentMarksRoute,
+  ParentProfileRoute: ParentProfileRoute,
+  ParentTimetableRoute: ParentTimetableRoute,
+  ParentIndexRoute: ParentIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
