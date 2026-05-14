@@ -691,6 +691,8 @@ export type Database = {
           is_noc_applied: boolean
           lead_id: string | null
           lock_reason: string | null
+          medical_record: Json | null
+          medical_report_url: string | null
           mother_email: string | null
           mother_name: string | null
           mother_occupation: string | null
@@ -698,6 +700,7 @@ export type Database = {
           noc_document_url: string | null
           noc_note: string | null
           organization_id: string
+          parent_declaration: Json | null
           parent_email: string | null
           parent_name: string | null
           parent_phone: string | null
@@ -742,6 +745,8 @@ export type Database = {
           is_noc_applied?: boolean
           lead_id?: string | null
           lock_reason?: string | null
+          medical_record?: Json | null
+          medical_report_url?: string | null
           mother_email?: string | null
           mother_name?: string | null
           mother_occupation?: string | null
@@ -749,6 +754,7 @@ export type Database = {
           noc_document_url?: string | null
           noc_note?: string | null
           organization_id: string
+          parent_declaration?: Json | null
           parent_email?: string | null
           parent_name?: string | null
           parent_phone?: string | null
@@ -793,6 +799,8 @@ export type Database = {
           is_noc_applied?: boolean
           lead_id?: string | null
           lock_reason?: string | null
+          medical_record?: Json | null
+          medical_report_url?: string | null
           mother_email?: string | null
           mother_name?: string | null
           mother_occupation?: string | null
@@ -800,6 +808,7 @@ export type Database = {
           noc_document_url?: string | null
           noc_note?: string | null
           organization_id?: string
+          parent_declaration?: Json | null
           parent_email?: string | null
           parent_name?: string | null
           parent_phone?: string | null
@@ -1383,6 +1392,7 @@ export type Database = {
           id: string
           notes: string | null
           organization_id: string
+          period_start_time: string
           status: string
           student_id: string
           subject: string
@@ -1397,6 +1407,7 @@ export type Database = {
           id?: string
           notes?: string | null
           organization_id: string
+          period_start_time?: string
           status: string
           student_id: string
           subject: string
@@ -1411,6 +1422,7 @@ export type Database = {
           id?: string
           notes?: string | null
           organization_id?: string
+          period_start_time?: string
           status?: string
           student_id?: string
           subject?: string
@@ -2018,6 +2030,84 @@ export type Database = {
           is_active?: boolean
           name?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      bulk_employee_id_card_generations: {
+        Row: {
+          created_at: string
+          download_type: string | null
+          generated_by: string | null
+          generated_pdf_url: string | null
+          id: string
+          layout: string | null
+          organization_id: string
+          selected_theme: string | null
+          side: string | null
+          total_employees: number
+        }
+        Insert: {
+          created_at?: string
+          download_type?: string | null
+          generated_by?: string | null
+          generated_pdf_url?: string | null
+          id?: string
+          layout?: string | null
+          organization_id: string
+          selected_theme?: string | null
+          side?: string | null
+          total_employees?: number
+        }
+        Update: {
+          created_at?: string
+          download_type?: string | null
+          generated_by?: string | null
+          generated_pdf_url?: string | null
+          id?: string
+          layout?: string | null
+          organization_id?: string
+          selected_theme?: string | null
+          side?: string | null
+          total_employees?: number
+        }
+        Relationships: []
+      }
+      bulk_id_card_generations: {
+        Row: {
+          created_at: string
+          download_type: string | null
+          generated_by: string | null
+          generated_pdf_url: string | null
+          id: string
+          layout: string | null
+          organization_id: string
+          selected_theme: string | null
+          side: string | null
+          total_students: number
+        }
+        Insert: {
+          created_at?: string
+          download_type?: string | null
+          generated_by?: string | null
+          generated_pdf_url?: string | null
+          id?: string
+          layout?: string | null
+          organization_id: string
+          selected_theme?: string | null
+          side?: string | null
+          total_students?: number
+        }
+        Update: {
+          created_at?: string
+          download_type?: string | null
+          generated_by?: string | null
+          generated_pdf_url?: string | null
+          id?: string
+          layout?: string | null
+          organization_id?: string
+          selected_theme?: string | null
+          side?: string | null
+          total_students?: number
         }
         Relationships: []
       }
@@ -2637,6 +2727,39 @@ export type Database = {
           max_age?: number
           min_age?: number
           updated_at?: string
+        }
+        Relationships: []
+      }
+      document_themes: {
+        Row: {
+          created_at: string
+          document_type: string
+          id: string
+          organization_id: string
+          selected_theme: string
+          template_content: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          document_type: string
+          id?: string
+          organization_id: string
+          selected_theme: string
+          template_content?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          document_type?: string
+          id?: string
+          organization_id?: string
+          selected_theme?: string
+          template_content?: string | null
+          updated_at?: string
+          updated_by?: string | null
         }
         Relationships: []
       }
@@ -3393,9 +3516,110 @@ export type Database = {
           },
         ]
       }
-      fee_heads: {
+      feature_flags: {
+        Row: {
+          enabled: boolean
+          flag_key: string
+          id: string
+          organization_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          enabled?: boolean
+          flag_key: string
+          id?: string
+          organization_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          enabled?: boolean
+          flag_key?: string
+          id?: string
+          organization_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      fee_audit_log: {
         Row: {
           created_at: string
+          created_by: string | null
+          details: Json
+          event_type: string
+          id: string
+          organization_id: string
+          override_id: string | null
+          payment_id: string | null
+          student_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          details?: Json
+          event_type: string
+          id?: string
+          organization_id: string
+          override_id?: string | null
+          payment_id?: string | null
+          student_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          details?: Json
+          event_type?: string
+          id?: string
+          organization_id?: string
+          override_id?: string | null
+          payment_id?: string | null
+          student_id?: string | null
+        }
+        Relationships: []
+      }
+      fee_backfill_log: {
+        Row: {
+          created_at: string
+          id: string
+          items_total: number | null
+          message: string | null
+          organization_id: string
+          override_id: string
+          override_total: number | null
+          status: string
+          terms_total: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          items_total?: number | null
+          message?: string | null
+          organization_id: string
+          override_id: string
+          override_total?: number | null
+          status: string
+          terms_total?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          items_total?: number | null
+          message?: string | null
+          organization_id?: string
+          override_id?: string
+          override_total?: number | null
+          status?: string
+          terms_total?: number | null
+        }
+        Relationships: []
+      }
+      fee_heads: {
+        Row: {
+          category: string
+          created_at: string
+          daycare_billing_unit: string | null
           deleted_at: string | null
           description: string | null
           display_order: number
@@ -3409,7 +3633,9 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          category?: string
           created_at?: string
+          daycare_billing_unit?: string | null
           deleted_at?: string | null
           description?: string | null
           display_order?: number
@@ -3423,7 +3649,9 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          category?: string
           created_at?: string
+          daycare_billing_unit?: string | null
           deleted_at?: string | null
           description?: string | null
           display_order?: number
@@ -3514,6 +3742,7 @@ export type Database = {
         Row: {
           academic_year: string
           amount: number
+          billing_type: string
           created_at: string
           created_by: string | null
           deleted_at: string | null
@@ -3548,6 +3777,7 @@ export type Database = {
         Insert: {
           academic_year?: string
           amount: number
+          billing_type?: string
           created_at?: string
           created_by?: string | null
           deleted_at?: string | null
@@ -3582,6 +3812,7 @@ export type Database = {
         Update: {
           academic_year?: string
           amount?: number
+          billing_type?: string
           created_at?: string
           created_by?: string | null
           deleted_at?: string | null
@@ -3658,10 +3889,13 @@ export type Database = {
           billing_type: string
           class: string
           created_at: string
+          daycare_billing_mode: string | null
           hours_per_day: number | null
           id: string
           monthly_fee: number | null
           organization_id: string
+          per_day_rate: number | null
+          per_hour_rate: number | null
           section: string | null
           tuition_fee: number
           updated_at: string
@@ -3673,10 +3907,13 @@ export type Database = {
           billing_type?: string
           class: string
           created_at?: string
+          daycare_billing_mode?: string | null
           hours_per_day?: number | null
           id?: string
           monthly_fee?: number | null
           organization_id: string
+          per_day_rate?: number | null
+          per_hour_rate?: number | null
           section?: string | null
           tuition_fee: number
           updated_at?: string
@@ -3688,10 +3925,13 @@ export type Database = {
           billing_type?: string
           class?: string
           created_at?: string
+          daycare_billing_mode?: string | null
           hours_per_day?: number | null
           id?: string
           monthly_fee?: number | null
           organization_id?: string
+          per_day_rate?: number | null
+          per_hour_rate?: number | null
           section?: string | null
           tuition_fee?: number
           updated_at?: string
@@ -3710,7 +3950,6 @@ export type Database = {
           id: string
           is_mandatory: boolean
           organization_id: string
-          term_number: number
           updated_at: string
         }
         Insert: {
@@ -3723,7 +3962,6 @@ export type Database = {
           id?: string
           is_mandatory?: boolean
           organization_id: string
-          term_number?: number
           updated_at?: string
         }
         Update: {
@@ -3736,7 +3974,6 @@ export type Database = {
           id?: string
           is_mandatory?: boolean
           organization_id?: string
-          term_number?: number
           updated_at?: string
         }
         Relationships: [
@@ -5352,6 +5589,75 @@ export type Database = {
           },
         ]
       }
+      payment_allocations: {
+        Row: {
+          allocated_amount: number
+          created_at: string
+          fee_head_id: string
+          id: string
+          organization_id: string
+          payment_id: string
+          student_fee_term_item_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          allocated_amount: number
+          created_at?: string
+          fee_head_id: string
+          id?: string
+          organization_id: string
+          payment_id: string
+          student_fee_term_item_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          allocated_amount?: number
+          created_at?: string
+          fee_head_id?: string
+          id?: string
+          organization_id?: string
+          payment_id?: string
+          student_fee_term_item_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_allocations_fee_head_id_fkey"
+            columns: ["fee_head_id"]
+            isOneToOne: false
+            referencedRelation: "fee_heads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_allocations_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "fee_payment_receipt_view"
+            referencedColumns: ["payment_id"]
+          },
+          {
+            foreignKeyName: "payment_allocations_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "fee_payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_allocations_student_fee_term_item_id_fkey"
+            columns: ["student_fee_term_item_id"]
+            isOneToOne: false
+            referencedRelation: "fee_payment_receipt_view"
+            referencedColumns: ["term_item_id"]
+          },
+          {
+            foreignKeyName: "payment_allocations_student_fee_term_item_id_fkey"
+            columns: ["student_fee_term_item_id"]
+            isOneToOne: false
+            referencedRelation: "student_fee_term_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payment_links: {
         Row: {
           academic_year: string
@@ -5621,51 +5927,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      razorpay_orders: {
-        Row: {
-          amount: number
-          created_at: string
-          currency: string
-          id: string
-          installment_id: string
-          organization_id: string
-          razorpay_order_id: string
-          razorpay_payment_id: string | null
-          receipt: string | null
-          status: string
-          student_id: string
-          updated_at: string
-        }
-        Insert: {
-          amount: number
-          created_at?: string
-          currency?: string
-          id?: string
-          installment_id: string
-          organization_id: string
-          razorpay_order_id: string
-          razorpay_payment_id?: string | null
-          receipt?: string | null
-          status?: string
-          student_id: string
-          updated_at?: string
-        }
-        Update: {
-          amount?: number
-          created_at?: string
-          currency?: string
-          id?: string
-          installment_id?: string
-          organization_id?: string
-          razorpay_order_id?: string
-          razorpay_payment_id?: string | null
-          receipt?: string | null
-          status?: string
-          student_id?: string
-          updated_at?: string
-        }
-        Relationships: []
       }
       roles: {
         Row: {
@@ -6297,75 +6558,12 @@ export type Database = {
           },
         ]
       }
-      student_fee_override_items: {
-        Row: {
-          academic_year: string
-          base_amount: number
-          created_at: string
-          fee_head_id: string
-          id: string
-          organization_id: string
-          override_amount: number | null
-          student_fee_override_id: string
-          student_id: string
-          term_number: number
-          updated_at: string
-        }
-        Insert: {
-          academic_year: string
-          base_amount?: number
-          created_at?: string
-          fee_head_id: string
-          id?: string
-          organization_id: string
-          override_amount?: number | null
-          student_fee_override_id: string
-          student_id: string
-          term_number: number
-          updated_at?: string
-        }
-        Update: {
-          academic_year?: string
-          base_amount?: number
-          created_at?: string
-          fee_head_id?: string
-          id?: string
-          organization_id?: string
-          override_amount?: number | null
-          student_fee_override_id?: string
-          student_id?: string
-          term_number?: number
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "student_fee_override_items_fee_head_id_fkey"
-            columns: ["fee_head_id"]
-            isOneToOne: false
-            referencedRelation: "fee_heads"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "student_fee_override_items_student_fee_override_id_fkey"
-            columns: ["student_fee_override_id"]
-            isOneToOne: false
-            referencedRelation: "student_fee_overrides"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "student_fee_override_items_student_id_fkey"
-            columns: ["student_id"]
-            isOneToOne: false
-            referencedRelation: "students_or_clients"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       student_fee_overrides: {
         Row: {
           academic_year: string
           annual_payment_discount_enabled: boolean | null
           annual_payment_discount_percent: number | null
+          archived_at: string | null
           base_annual_fee: number | null
           billing_type: string
           class_name: string
@@ -6375,8 +6573,10 @@ export type Database = {
           custom_total_fee: number | null
           discount_type: string
           discount_value: number | null
+          fee_head_discounts: Json | null
           final_payable_amount: number
           id: string
+          manually_edited: boolean
           notes: string | null
           organization_id: string
           original_fee: number
@@ -6388,17 +6588,20 @@ export type Database = {
           slip_number: string | null
           status: string
           student_id: string
+          superseded_by: string | null
           term1_percent: number | null
           term2_percent: number | null
           term3_percent: number | null
           updated_at: string
           usage_billing_config: Json | null
+          version: number
           working_days: number | null
         }
         Insert: {
           academic_year: string
           annual_payment_discount_enabled?: boolean | null
           annual_payment_discount_percent?: number | null
+          archived_at?: string | null
           base_annual_fee?: number | null
           billing_type?: string
           class_name: string
@@ -6408,8 +6611,10 @@ export type Database = {
           custom_total_fee?: number | null
           discount_type?: string
           discount_value?: number | null
+          fee_head_discounts?: Json | null
           final_payable_amount: number
           id?: string
+          manually_edited?: boolean
           notes?: string | null
           organization_id: string
           original_fee: number
@@ -6421,17 +6626,20 @@ export type Database = {
           slip_number?: string | null
           status?: string
           student_id: string
+          superseded_by?: string | null
           term1_percent?: number | null
           term2_percent?: number | null
           term3_percent?: number | null
           updated_at?: string
           usage_billing_config?: Json | null
+          version?: number
           working_days?: number | null
         }
         Update: {
           academic_year?: string
           annual_payment_discount_enabled?: boolean | null
           annual_payment_discount_percent?: number | null
+          archived_at?: string | null
           base_annual_fee?: number | null
           billing_type?: string
           class_name?: string
@@ -6441,8 +6649,10 @@ export type Database = {
           custom_total_fee?: number | null
           discount_type?: string
           discount_value?: number | null
+          fee_head_discounts?: Json | null
           final_payable_amount?: number
           id?: string
+          manually_edited?: boolean
           notes?: string | null
           organization_id?: string
           original_fee?: number
@@ -6454,11 +6664,13 @@ export type Database = {
           slip_number?: string | null
           status?: string
           student_id?: string
+          superseded_by?: string | null
           term1_percent?: number | null
           term2_percent?: number | null
           term3_percent?: number | null
           updated_at?: string
           usage_billing_config?: Json | null
+          version?: number
           working_days?: number | null
         }
         Relationships: [
@@ -6476,6 +6688,131 @@ export type Database = {
             referencedRelation: "students_or_clients"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "student_fee_overrides_superseded_by_fkey"
+            columns: ["superseded_by"]
+            isOneToOne: false
+            referencedRelation: "student_fee_overrides"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_fee_overrides_history: {
+        Row: {
+          academic_year: string
+          archived_at: string
+          archived_by: string | null
+          id: string
+          organization_id: string
+          override_id: string
+          reason: string | null
+          snapshot: Json
+          student_id: string
+          version: number
+        }
+        Insert: {
+          academic_year: string
+          archived_at?: string
+          archived_by?: string | null
+          id?: string
+          organization_id: string
+          override_id: string
+          reason?: string | null
+          snapshot: Json
+          student_id: string
+          version: number
+        }
+        Update: {
+          academic_year?: string
+          archived_at?: string
+          archived_by?: string | null
+          id?: string
+          organization_id?: string
+          override_id?: string
+          reason?: string | null
+          snapshot?: Json
+          student_id?: string
+          version?: number
+        }
+        Relationships: []
+      }
+      student_fee_term_items: {
+        Row: {
+          billing_type: string
+          created_at: string
+          discount_amount: number
+          fee_head_id: string | null
+          fee_head_name: string | null
+          final_amount: number
+          id: string
+          is_recurring: boolean
+          organization_id: string
+          original_amount: number
+          paid_amount: number
+          student_fee_override_id: string
+          student_fee_term_id: string
+          student_id: string
+          synthetic_fee_key: string | null
+          updated_at: string
+        }
+        Insert: {
+          billing_type: string
+          created_at?: string
+          discount_amount?: number
+          fee_head_id?: string | null
+          fee_head_name?: string | null
+          final_amount?: number
+          id?: string
+          is_recurring?: boolean
+          organization_id: string
+          original_amount?: number
+          paid_amount?: number
+          student_fee_override_id: string
+          student_fee_term_id: string
+          student_id: string
+          synthetic_fee_key?: string | null
+          updated_at?: string
+        }
+        Update: {
+          billing_type?: string
+          created_at?: string
+          discount_amount?: number
+          fee_head_id?: string | null
+          fee_head_name?: string | null
+          final_amount?: number
+          id?: string
+          is_recurring?: boolean
+          organization_id?: string
+          original_amount?: number
+          paid_amount?: number
+          student_fee_override_id?: string
+          student_fee_term_id?: string
+          student_id?: string
+          synthetic_fee_key?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_fee_term_items_fee_head_id_fkey"
+            columns: ["fee_head_id"]
+            isOneToOne: false
+            referencedRelation: "fee_heads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_fee_term_items_student_fee_override_id_fkey"
+            columns: ["student_fee_override_id"]
+            isOneToOne: false
+            referencedRelation: "student_fee_overrides"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_fee_term_items_student_fee_term_id_fkey"
+            columns: ["student_fee_term_id"]
+            isOneToOne: false
+            referencedRelation: "student_fee_terms"
+            referencedColumns: ["id"]
+          },
         ]
       }
       student_fee_terms: {
@@ -6485,7 +6822,6 @@ export type Database = {
           created_at: string
           due_amount: number | null
           due_date: string | null
-          fee_head_id: string | null
           grace_days: number | null
           id: string
           installment_name: string | null
@@ -6509,7 +6845,6 @@ export type Database = {
           created_at?: string
           due_amount?: number | null
           due_date?: string | null
-          fee_head_id?: string | null
           grace_days?: number | null
           id?: string
           installment_name?: string | null
@@ -6533,7 +6868,6 @@ export type Database = {
           created_at?: string
           due_amount?: number | null
           due_date?: string | null
-          fee_head_id?: string | null
           grace_days?: number | null
           id?: string
           installment_name?: string | null
@@ -6552,13 +6886,6 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "student_fee_terms_fee_head_id_fkey"
-            columns: ["fee_head_id"]
-            isOneToOne: false
-            referencedRelation: "fee_heads"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "student_fee_terms_organization_id_fkey"
             columns: ["organization_id"]
@@ -6607,15 +6934,29 @@ export type Database = {
           discount_percentage: number | null
           document_verified: boolean | null
           email: string | null
+          father_email: string | null
           father_name: string | null
+          father_occupation: string | null
+          father_phone: string | null
           fee_paid: boolean | null
           gender: string | null
+          guardian_email: string | null
+          guardian_name: string | null
+          guardian_phone: string | null
+          guardian_relation: string | null
           id: string
           is_archived: boolean
+          medical_record: Json | null
+          medical_report_url: string | null
+          mother_email: string | null
           mother_name: string | null
+          mother_occupation: string | null
+          mother_phone: string | null
           name: string
+          noc_document_url: string | null
           old_admission_number: string | null
           organization_id: string
+          parent_declaration: Json | null
           pen_number: string | null
           pen_verified: boolean
           phone: string | null
@@ -6661,15 +7002,29 @@ export type Database = {
           discount_percentage?: number | null
           document_verified?: boolean | null
           email?: string | null
+          father_email?: string | null
           father_name?: string | null
+          father_occupation?: string | null
+          father_phone?: string | null
           fee_paid?: boolean | null
           gender?: string | null
+          guardian_email?: string | null
+          guardian_name?: string | null
+          guardian_phone?: string | null
+          guardian_relation?: string | null
           id?: string
           is_archived?: boolean
+          medical_record?: Json | null
+          medical_report_url?: string | null
+          mother_email?: string | null
           mother_name?: string | null
+          mother_occupation?: string | null
+          mother_phone?: string | null
           name: string
+          noc_document_url?: string | null
           old_admission_number?: string | null
           organization_id: string
+          parent_declaration?: Json | null
           pen_number?: string | null
           pen_verified?: boolean
           phone?: string | null
@@ -6715,15 +7070,29 @@ export type Database = {
           discount_percentage?: number | null
           document_verified?: boolean | null
           email?: string | null
+          father_email?: string | null
           father_name?: string | null
+          father_occupation?: string | null
+          father_phone?: string | null
           fee_paid?: boolean | null
           gender?: string | null
+          guardian_email?: string | null
+          guardian_name?: string | null
+          guardian_phone?: string | null
+          guardian_relation?: string | null
           id?: string
           is_archived?: boolean
+          medical_record?: Json | null
+          medical_report_url?: string | null
+          mother_email?: string | null
           mother_name?: string | null
+          mother_occupation?: string | null
+          mother_phone?: string | null
           name?: string
+          noc_document_url?: string | null
           old_admission_number?: string | null
           organization_id?: string
+          parent_declaration?: Json | null
           pen_number?: string | null
           pen_verified?: boolean
           phone?: string | null
@@ -7837,20 +8206,46 @@ export type Database = {
       }
     }
     Views: {
-      fee_structure_term_totals: {
+      fee_payment_receipt_view: {
         Row: {
-          fee_head_ids: string[] | null
-          fee_structure_id: string | null
-          head_count: number | null
+          allocated_amount: number | null
+          allocation_id: string | null
+          fee_head_id: string | null
+          fee_head_name: string | null
+          head_balance: number | null
+          head_paid_after: number | null
+          head_total: number | null
+          organization_id: string | null
+          payment_amount: number | null
+          payment_date: string | null
+          payment_id: string | null
+          payment_mode: string | null
+          receipt_number: string | null
+          student_id: string | null
+          term_item_id: string | null
+          term_name: string | null
           term_number: number | null
-          term_total: number | null
         }
         Relationships: [
           {
-            foreignKeyName: "fee_structure_items_fee_structure_id_fkey"
-            columns: ["fee_structure_id"]
+            foreignKeyName: "fee_payments_organization_id_fkey"
+            columns: ["organization_id"]
             isOneToOne: false
-            referencedRelation: "fee_structure"
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fee_payments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students_or_clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_allocations_fee_head_id_fkey"
+            columns: ["fee_head_id"]
+            isOneToOne: false
+            referencedRelation: "fee_heads"
             referencedColumns: ["id"]
           },
         ]
@@ -7899,6 +8294,15 @@ export type Database = {
         }
         Returns: Json
       }
+      allocate_payment: { Args: { p_payment_id: string }; Returns: Json }
+      allocate_payment_smart: {
+        Args: {
+          p_payment_id: string
+          p_selected_item_ids?: string[]
+          p_selected_term_id?: string
+        }
+        Returns: Json
+      }
       apply_bank_change_request: {
         Args: { p_request_id: string }
         Returns: undefined
@@ -7923,6 +8327,19 @@ export type Database = {
         Args: { _archived_by: string; _org_id: string }
         Returns: undefined
       }
+      archive_override: {
+        Args: { p_override_id: string; p_reason?: string }
+        Returns: string
+      }
+      backfill_legacy_payments: { Args: never; Returns: Json }
+      backfill_student_fee_term_items: {
+        Args: never
+        Returns: {
+          message: string
+          override_id: string
+          status: string
+        }[]
+      }
       calculate_access_days: {
         Args: {
           p_installment_amount: number
@@ -7937,6 +8354,10 @@ export type Database = {
       }
       cleanup_all_data: { Args: never; Returns: undefined }
       cleanup_old_archives: { Args: never; Returns: undefined }
+      compute_student_fee_status: {
+        Args: { p_academic_year?: string; p_student_id: string }
+        Returns: Json
+      }
       create_default_roles: {
         Args: {
           org_id: string
@@ -7960,6 +8381,7 @@ export type Database = {
             }
             Returns: undefined
           }
+      ensure_daycare_monthly_head: { Args: { _org: string }; Returns: string }
       generate_admission_number: { Args: { p_org_id: string }; Returns: string }
       generate_cert_reference_no: {
         Args: { p_employee_id: string; p_org_id: string }
@@ -7969,6 +8391,7 @@ export type Database = {
         Args: { p_date: string; p_day_of_week: string; p_org_id: string }
         Returns: number
       }
+      generate_employee_id: { Args: { _org_id: string }; Returns: string }
       generate_roll_number: {
         Args: { p_class: string; p_org_id: string; p_section: string }
         Returns: string
@@ -8041,6 +8464,33 @@ export type Database = {
       }
       get_parent_org_id: { Args: { _user_id: string }; Returns: string }
       get_parent_student_id: { Args: { _user_id: string }; Returns: string }
+      get_student_fee_view: {
+        Args: { p_academic_year: string; p_student_id: string }
+        Returns: Json
+      }
+      get_term_dues: {
+        Args: { p_academic_year?: string; p_student_id: string }
+        Returns: {
+          billing_type: string
+          due_date: string
+          fee_head_id: string
+          fee_head_name: string
+          fully_paid: boolean
+          is_recurring: boolean
+          item_final: number
+          item_id: string
+          item_paid: number
+          item_pending: number
+          override_id: string
+          synthetic_fee_key: string
+          term_amount: number
+          term_id: string
+          term_name: string
+          term_number: number
+          term_paid: number
+          term_pending: number
+        }[]
+      }
       get_user_id_by_email: { Args: { _email: string }; Returns: string }
       get_user_organization: { Args: { _user_id: string }; Returns: string }
       get_user_permissions: { Args: { _user_id: string }; Returns: Json }
@@ -8065,9 +8515,17 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_feature_enabled: {
+        Args: { p_flag: string; p_org_id: string }
+        Returns: boolean
+      }
       is_parent: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin_v2: { Args: { _user_id: string }; Returns: boolean }
+      is_teacher_scheduled_now: {
+        Args: { _class_name: string; _subject: string }
+        Returns: boolean
+      }
       is_teacher_scheduled_today: {
         Args: { _class_name: string; _subject: string }
         Returns: boolean
@@ -8076,15 +8534,38 @@ export type Database = {
         Args: { check_time?: string; end_time: string; start_time: string }
         Returns: boolean
       }
+      log_fee_event: {
+        Args: {
+          p_details?: Json
+          p_event: string
+          p_org_id: string
+          p_override_id?: string
+          p_payment_id?: string
+          p_student_id?: string
+        }
+        Returns: string
+      }
       map_enum_to_role_name: { Args: { role_enum: string }; Returns: string }
+      materialize_override_term_items: {
+        Args: { p_override_id: string }
+        Returns: Json
+      }
       normalize_class_name: { Args: { _name: string }; Returns: string }
       populate_class_sections_for_org: {
         Args: { p_org_id: string }
         Returns: undefined
       }
+      prepare_override_reissue: {
+        Args: { p_override_id: string }
+        Returns: Json
+      }
       promote_to_super_admin: {
         Args: { _user_email: string }
         Returns: undefined
+      }
+      rebuild_term_items: {
+        Args: { p_force?: boolean; p_override_id: string }
+        Returns: Json
       }
       restore_archived_record: {
         Args: { _module: string; _original_id: string; _restored_by: string }
@@ -8092,6 +8573,10 @@ export type Database = {
       }
       restore_lead: { Args: { lead_id: string }; Returns: undefined }
       restore_organization: { Args: { _org_id: string }; Returns: undefined }
+      reverse_payment_allocations: {
+        Args: { p_payment_id: string }
+        Returns: Json
+      }
       soft_delete_lead: { Args: { lead_id: string }; Returns: undefined }
       sync_class_sections_from_existing_data: {
         Args: never
@@ -8124,6 +8609,16 @@ export type Database = {
         Returns: boolean
       }
       today_day_name: { Args: never; Returns: string }
+      validate_override_invariant: {
+        Args: { p_override_id: string }
+        Returns: {
+          items_total: number
+          message: string
+          ok: boolean
+          override_total: number
+          terms_total: number
+        }[]
+      }
     }
     Enums: {
       app_role:
