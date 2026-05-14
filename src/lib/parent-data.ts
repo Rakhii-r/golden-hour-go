@@ -374,26 +374,7 @@ export async function getFeeSummary(
     terms = await fetchStudentFeeTerms(studentId);
   }
 
-  // FALLBACK: if no direct terms, look up via student_fee_overrides.
-  if (!terms || terms.length === 0) {
-    const { data: override } = await parentSupabase
-      .from("student_fee_overrides")
-      .select("id")
-      .eq("student_id", studentId)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    const overrideId = (override as { id?: string } | null)?.id;
-    if (overrideId) {
-      const { data: overrideTerms } = await parentSupabase
-        .from("student_fee_terms")
-        .select(
-          "term_amount, paid_amount, due_amount, due_date, status, late_fee_paid, balance_amount",
-        )
-        .eq("student_fee_override_id", overrideId);
-      terms = (overrideTerms ?? []) as typeof terms;
-    }
-  }
+  // (legacy fallback removed — primary now scopes to latest override directly)
 
   let total = 0;
   let paid = 0;
