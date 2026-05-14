@@ -492,7 +492,7 @@ function FeesPage() {
           try {
             const vData = await invokeParentFunction<VerifyPaymentResponse>("razorpay-verify-payment", {
               ...response,
-              installment_id: term.id,
+              installment_id: term.parent_term_id,
               amount: balance,
             });
             if (!vData.success) throw new Error("Verification failed");
