@@ -457,12 +457,13 @@ function FeesPage() {
     await reload();
   };
 
-  // ── Razorpay handler (logic unchanged, triggers per term row) ──
+  // ── Razorpay handler — pays the WHOLE parent term (Razorpay function expects
+  //    student_fee_terms.id; per-fee-head split rows share a parent_term_id).
   const handlePay = async (term: RawTerm) => {
     if (!student) return;
-    const balance = termBalance(term);
+    const balance = term.parent_term_balance > 0 ? term.parent_term_balance : termBalance(term);
     if (!balance || balance <= 0) { toast.info("This installment is already paid."); return; }
-    setPayingId(term.id);
+    setPayingId(term.parent_term_id);
     try {
       const ok = await loadRazorpay();
       if (!ok) throw new Error("Failed to load Razorpay");
