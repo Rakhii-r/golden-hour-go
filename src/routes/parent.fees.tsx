@@ -536,19 +536,25 @@ function FeesPage() {
     await reload();
   };
 
-  // ── Razorpay handler — pays the WHOLE parent term (Razorpay function expects
-  //    student_fee_terms.id; per-fee-head split rows share a parent_term_id).
-  const handlePay = async (term: RawTerm) => {
+  // Razorpay handler. If itemIds provided, only those fee heads will be paid
+  // and allocated by the verify function. Otherwise the whole term is paid.
+  const handlePay = async (
+    parentTermId: string,
+    amount: number,
+    descriptor: string,
+    itemIds?: string[],
+  ) => {
     if (!student) return;
-    const balance = term.parent_term_balance > 0 ? term.parent_term_balance : termBalance(term);
-    if (!balance || balance <= 0) { toast.info("This installment is already paid."); return; }
-    setPayingId(term.parent_term_id);
+    if (!amount || amount <= 0) { toast.info("Nothing to pay."); return; }
+    const payKey = itemIds && itemIds.length > 0 ? `${parentTermId}:${itemIds.join(",")}` : parentTermId;
+    setPayingId(payKey);
     try {
       const ok = await loadRazorpay();
       if (!ok) throw new Error("Failed to load Razorpay");
       const data = await invokeParentFunction<RazorpayOrderResponse>("razorpay-create-order", {
-        installment_id: term.parent_term_id,
-        amount: balance,
+        installment_id: parentTermId,
+        amount,
+        ...(itemIds && itemIds.length > 0 ? { item_ids: itemIds } : {}),
       });
       const rzp = new window.Razorpay({
         key: data.key_id,
@@ -557,9 +563,7 @@ function FeesPage() {
         currency: data.currency,
         name: organization?.name ?? "School",
         image: organization?.logo_url ?? undefined,
-        description: term.fee_heads?.fee_head_name
-          ? `${term.fee_heads.fee_head_name} — ${term.installment_name ?? ""}`
-          : (term.installment_name ?? "Fee installment"),
+        description: descriptor,
         prefill: { name: student.name ?? undefined },
         theme: { color: "#FF6B00" },
         config_id: "config_SmTmClnmVbHhKf",
@@ -571,11 +575,18 @@ function FeesPage() {
           try {
             const vData = await invokeParentFunction<VerifyPaymentResponse>("razorpay-verify-payment", {
               ...response,
-              installment_id: term.parent_term_id,
-              amount: balance,
+              installment_id: parentTermId,
+              amount,
+              ...(itemIds && itemIds.length > 0 ? { item_ids: itemIds } : {}),
             });
             if (!vData.success) throw new Error("Verification failed");
             toast.success("Payment successful");
+            // Clear selection for this term
+            setSelectedItems((prev) => {
+              const next = { ...prev };
+              delete next[parentTermId];
+              return next;
+            });
             await reloadAll();
           } catch (e) {
             toast.error(e instanceof Error ? e.message : "Payment verification failed");
