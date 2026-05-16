@@ -473,18 +473,38 @@ function FeesPage() {
       }
     }
 
-    // 6. Payments (recent transactions).
+    // 6. Payments (recent transactions) — include term/head/txn info.
     const { data: p } = await parentSupabase
       .from("fee_payments")
-      .select("id, amount, payment_date, payment_mode, receipt_number, status, is_deleted")
+      .select(
+        "id, amount, payment_date, payment_mode, receipt_number, transaction_id, status, is_deleted, term_number, fee_head_id, late_fee_amount, discount_amount, notes",
+      )
       .eq("student_id", studentId)
       .order("payment_date", { ascending: false });
 
+    // Resolve fee_head names for payments (cover heads not in items as well).
+    const payRows = ((p ?? []) as Array<FeePayment & { is_deleted: boolean | null }>).filter(
+      (x) => !x.is_deleted,
+    );
+    const payHeadIds = Array.from(
+      new Set(payRows.map((r) => r.fee_head_id).filter((x): x is string => !!x)),
+    );
+    const missingHeadIds = payHeadIds.filter((id) => !feeHeadMap.has(id));
+    if (missingHeadIds.length > 0) {
+      const { data: extra } = await parentSupabase
+        .from("fee_heads")
+        .select("id, fee_head_name, display_order, is_recurring")
+        .in("id", missingHeadIds);
+      for (const h of (extra ?? []) as FeeHead[]) feeHeadMap.set(h.id, h);
+    }
+    const enrichedPayments: FeePayment[] = payRows.map((r) => ({
+      ...r,
+      fee_head_name: r.fee_head_id ? (feeHeadMap.get(r.fee_head_id)?.fee_head_name ?? null) : null,
+    }));
+
     if (signal?.cancelled) return;
     setTerms(merged);
-    setPayments(
-      ((p ?? []) as Array<FeePayment & { is_deleted: boolean | null }>).filter((x) => !x.is_deleted),
-    );
+    setPayments(enrichedPayments);
   };
 
   useEffect(() => {
