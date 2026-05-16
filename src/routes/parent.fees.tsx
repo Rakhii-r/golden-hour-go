@@ -838,10 +838,6 @@ function FeesPage() {
               /* Default View — grouped by TERM with fee head breakdown */
               <div className="space-y-5">
                 {termGroups.map((tg) => {
-                  const academicYear =
-                    tg.rows.find((r) => r.fee_heads)?.fee_heads
-                      ? null
-                      : null;
                   return (
                     <div key={tg.parentTermId} className="rounded-xl border border-border overflow-hidden">
                       <div className="flex flex-wrap items-center justify-between gap-2 bg-muted/30 px-4 py-3">
