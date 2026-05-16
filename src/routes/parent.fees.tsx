@@ -835,45 +835,68 @@ function FeesPage() {
             ) : terms.length === 0 ? (
               <p className="text-sm parent-muted">No fee structure data available.</p>
             ) : structureView === "default" ? (
-              /* Default View — grouped by fee head */
+              /* Default View — grouped by TERM with fee head breakdown */
               <div className="space-y-5">
-                {feeGroups.map((group) => (
-                  <div key={group.key} className="rounded-xl border border-border overflow-hidden">
-                    <div className="flex items-center justify-between bg-muted/30 px-4 py-3">
-                      <span className="font-semibold text-secondary">{group.name}</span>
-                      <span className="text-sm font-bold text-primary">{fmt(group.total)}</span>
-                    </div>
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="border-t border-border text-left text-xs parent-muted">
-                            <th className="px-4 py-2">Installment</th>
-                            <th className="px-3 py-2 text-right">Amount</th>
-                            <th className="px-3 py-2">Due Date</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {group.terms.map((t) => (
-                            <tr key={t.id} className="border-t border-border">
-                              <td className="px-4 py-2.5">
-                                {t.installment_name ?? `Term ${t.term_number}`}
-                                {t.fee_heads && !t.fee_heads.is_recurring && (
-                                  <span className="ml-2 rounded-full bg-muted px-1.5 py-0.5 text-[10px] parent-muted">
-                                    one-time
-                                  </span>
-                                )}
-                              </td>
-                              <td className="px-3 py-2.5 text-right font-medium">
-                                {fmt(Number(t.term_amount))}
-                              </td>
-                              <td className="px-3 py-2.5 parent-muted">{fmtDate(t.due_date)}</td>
+                {termGroups.map((tg) => {
+                  const academicYear =
+                    tg.rows.find((r) => r.fee_heads)?.fee_heads
+                      ? null
+                      : null;
+                  return (
+                    <div key={tg.parentTermId} className="rounded-xl border border-border overflow-hidden">
+                      <div className="flex flex-wrap items-center justify-between gap-2 bg-muted/30 px-4 py-3">
+                        <div>
+                          <p className="font-semibold text-secondary">
+                            {tg.installmentName ?? `Term ${tg.termNumber}`}
+                          </p>
+                          <p className="text-xs parent-muted">
+                            Due Date: {fmtDate(tg.dueDate)}
+                            {academicYear ? ` · AY ${academicYear}` : ""}
+                          </p>
+                        </div>
+                        <span className="text-sm font-bold text-primary">{fmt(tg.total)}</span>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="border-t border-border text-left text-xs parent-muted">
+                              <th className="px-4 py-2">Fee Head</th>
+                              <th className="px-3 py-2">Category</th>
+                              <th className="px-3 py-2 text-right">Amount</th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                          </thead>
+                          <tbody>
+                            {tg.rows.map((t) => {
+                              const head = t.fee_heads;
+                              return (
+                                <tr key={t.id} className="border-t border-border">
+                                  <td className="px-4 py-2.5">
+                                    {head?.fee_head_name ?? t.installment_name ?? `Term ${t.term_number}`}
+                                    {head && !head.is_recurring && (
+                                      <span className="ml-2 rounded-full bg-muted px-1.5 py-0.5 text-[10px] parent-muted">
+                                        one-time
+                                      </span>
+                                    )}
+                                  </td>
+                                  <td className="px-3 py-2.5 parent-muted text-xs">
+                                    {head?.is_recurring ? "Recurring" : head ? "One-time" : "—"}
+                                  </td>
+                                  <td className="px-3 py-2.5 text-right font-medium">
+                                    {fmt(Number(t.term_amount))}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                            <tr className="border-t-2 border-border bg-muted/20 font-semibold">
+                              <td className="px-4 py-2.5" colSpan={2}>Total</td>
+                              <td className="px-3 py-2.5 text-right text-primary">{fmt(tg.total)}</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               /* Due Date Wise View — grouped by month */
