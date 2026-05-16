@@ -1,0 +1,1 @@
+CREATE POLICY "parent_select_own_term_items" ON public.student_fee_term_items FOR SELECT USING (is_parent(auth.uid()) AND student_id = get_parent_student_id(auth.uid()));
