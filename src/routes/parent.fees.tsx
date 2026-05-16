@@ -667,27 +667,20 @@ function FeesPage() {
                 <Skeleton className="h-14 w-full" />
                 <Skeleton className="h-14 w-full" />
               </div>
-            ) : feeGroups.length === 0 ? (
+            ) : termGroups.length === 0 ? (
               <p className="text-sm parent-muted">No fee details found for this student.</p>
             ) : (
-              <div className="space-y-2">
-                {/* Fee head breakdown header */}
-                <div className="mb-3 hidden grid-cols-[1fr_auto_auto_auto_auto] gap-3 px-4 text-xs font-medium uppercase tracking-wide parent-muted sm:grid">
-                  <span>Fee Head</span>
-                  <span className="text-right">Total</span>
-                  <span className="text-right">Paid</span>
-                  <span className="text-right">Pending</span>
-                  <span className="text-right">Status</span>
-                </div>
-
-                {feeGroups.map((group) => {
-                  const isOpen = expanded.has(group.key);
-                  const allPaid = group.pending <= 0;
+              <div className="space-y-3">
+                {termGroups.map((tg) => {
+                  const key = `term-${tg.parentTermId}`;
+                  const isOpen = expanded.has(key);
+                  const firstRow = tg.rows[0];
+                  const payable = tg.pending > 0.01;
                   return (
-                    <div key={group.key} className="overflow-hidden rounded-xl border border-border">
-                      {/* Fee head row — clickable header */}
+                    <div key={key} className="overflow-hidden rounded-xl border border-border">
+                      {/* Term header */}
                       <button
-                        onClick={() => toggleExpand(group.key)}
+                        onClick={() => toggleExpand(key)}
                         className="flex w-full items-center justify-between gap-3 bg-muted/30 px-4 py-3 text-left transition hover:bg-muted/50"
                       >
                         <div className="flex min-w-0 items-center gap-2">
@@ -696,75 +689,103 @@ function FeesPage() {
                           ) : (
                             <ChevronRight className="h-4 w-4 shrink-0 parent-muted" />
                           )}
-                          <span className="font-medium text-foreground">{group.name}</span>
-                          <span className="hidden text-xs parent-muted sm:inline">
-                            ({group.terms.length} installment{group.terms.length !== 1 ? "s" : ""})
-                          </span>
+                          <div className="min-w-0">
+                            <p className="font-semibold text-secondary">
+                              {tg.installmentName ?? `Term ${tg.termNumber}`}
+                            </p>
+                            <p className="text-xs parent-muted">
+                              Due {fmtDate(tg.dueDate)} · {tg.rows.length} fee head
+                              {tg.rows.length !== 1 ? "s" : ""}
+                            </p>
+                          </div>
                         </div>
                         <div className="flex shrink-0 items-center gap-4 text-sm">
-                          <span className="hidden text-right font-medium text-secondary sm:block">
-                            {fmt(group.total)}
-                          </span>
-                          <span className="hidden text-right text-emerald-600 sm:block">{fmt(group.paid)}</span>
-                          <span className="font-semibold text-destructive">{fmt(group.pending)}</span>
-                          <StatusBadge status={allPaid ? "paid" : group.paid > 0 ? "partial" : "pending"} />
+                          <div className="hidden text-right sm:block">
+                            <p className="text-[10px] uppercase parent-muted">Total</p>
+                            <p className="font-medium text-secondary">{fmt(tg.total)}</p>
+                          </div>
+                          <div className="hidden text-right sm:block">
+                            <p className="text-[10px] uppercase parent-muted">Paid</p>
+                            <p className="text-emerald-600">{fmt(tg.paid)}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-[10px] uppercase parent-muted">Pending</p>
+                            <p className="font-semibold text-destructive">{fmt(tg.pending)}</p>
+                          </div>
+                          <StatusBadge
+                            status={tg.status === "partial" ? "Partial Paid" : tg.status}
+                          />
+                          {payable && firstRow && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handlePay(firstRow);
+                              }}
+                              disabled={payingId === tg.parentTermId}
+                              className="glass-btn ml-1 inline-flex items-center gap-1 px-3 py-1.5 text-xs disabled:opacity-60"
+                            >
+                              <CreditCard className="h-3 w-3" />
+                              {payingId === tg.parentTermId ? "Processing…" : "Pay"}
+                            </button>
+                          )}
                         </div>
                       </button>
 
-                      {/* Expanded term rows */}
+                      {/* Fee head breakdown inside the term */}
                       {isOpen && (
                         <div className="overflow-x-auto">
                           <table className="w-full text-sm">
                             <thead>
                               <tr className="border-t border-border bg-muted/10 text-left text-xs parent-muted">
-                                <th className="px-4 py-2">Installment</th>
-                                <th className="px-3 py-2 text-right">Amount</th>
+                                <th className="px-4 py-2">Fee Head</th>
+                                <th className="px-3 py-2 text-right">Total</th>
                                 <th className="px-3 py-2 text-right">Paid</th>
-                                <th className="px-3 py-2 text-right">Balance</th>
-                                <th className="px-3 py-2">Due Date</th>
+                                <th className="px-3 py-2 text-right">Pending</th>
                                 <th className="px-3 py-2">Status</th>
-                                <th className="px-3 py-2">Action</th>
                               </tr>
                             </thead>
                             <tbody>
-                              {group.terms.map((t) => {
+                              {tg.rows.map((t) => {
                                 const bal = termBalance(t);
-                                const payable = bal > 0.01 && (t.status ?? "").toLowerCase() !== "paid";
+                                const headName =
+                                  t.fee_heads?.fee_head_name ??
+                                  t.installment_name ??
+                                  `Term ${t.term_number}`;
+                                const rowStatus =
+                                  bal <= 0.01
+                                    ? "paid"
+                                    : Number(t.paid_amount) > 0
+                                      ? "Partial Paid"
+                                      : "pending";
                                 return (
                                   <tr key={t.id} className="border-t border-border">
-                                    <td className="px-4 py-2.5 font-medium">
-                                      {t.installment_name ?? `Term ${t.term_number}`}
+                                    <td className="px-4 py-2.5 font-medium">{headName}</td>
+                                    <td className="px-3 py-2.5 text-right">
+                                      {fmt(Number(t.term_amount))}
                                     </td>
-                                    <td className="px-3 py-2.5 text-right">{fmt(Number(t.term_amount))}</td>
                                     <td className="px-3 py-2.5 text-right text-emerald-600">
                                       {fmt(Number(t.paid_amount))}
                                     </td>
                                     <td className="px-3 py-2.5 text-right font-medium text-destructive">
                                       {fmt(bal)}
                                     </td>
-                                    <td className="px-3 py-2.5 whitespace-nowrap parent-muted">
-                                      {fmtDate(t.due_date)}
-                                    </td>
                                     <td className="px-3 py-2.5">
-                                      <StatusBadge status={t.status} />
-                                    </td>
-                                    <td className="px-3 py-2.5">
-                                      {payable ? (
-                                        <button
-                                          onClick={() => handlePay(t)}
-                                          disabled={payingId === t.parent_term_id}
-                                          className="glass-btn inline-flex items-center gap-1 px-3 py-1 text-xs disabled:opacity-60"
-                                        >
-                                          <CreditCard className="h-3 w-3" />
-                                          {payingId === t.parent_term_id ? "Processing…" : "Pay"}
-                                        </button>
-                                      ) : (
-                                        <span className="text-xs parent-muted">—</span>
-                                      )}
+                                      <StatusBadge status={rowStatus} />
                                     </td>
                                   </tr>
                                 );
                               })}
+                              <tr className="border-t-2 border-border bg-muted/20 font-semibold">
+                                <td className="px-4 py-2.5">Term Total</td>
+                                <td className="px-3 py-2.5 text-right">{fmt(tg.total)}</td>
+                                <td className="px-3 py-2.5 text-right text-emerald-600">
+                                  {fmt(tg.paid)}
+                                </td>
+                                <td className="px-3 py-2.5 text-right text-destructive">
+                                  {fmt(tg.pending)}
+                                </td>
+                                <td className="px-3 py-2.5" />
+                              </tr>
                             </tbody>
                           </table>
                         </div>
