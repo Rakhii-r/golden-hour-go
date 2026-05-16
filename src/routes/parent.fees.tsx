@@ -171,7 +171,26 @@ interface FeePayment {
   payment_date: string | null;
   payment_mode: string | null;
   receipt_number: string | null;
+  transaction_id: string | null;
   status: string | null;
+  term_number: number | null;
+  fee_head_id: string | null;
+  fee_head_name?: string | null;
+  late_fee_amount: number | null;
+  discount_amount: number | null;
+  notes: string | null;
+}
+
+interface TermGroup {
+  parentTermId: string;
+  termNumber: number;
+  installmentName: string | null;
+  dueDate: string | null;
+  status: string;
+  total: number;
+  paid: number;
+  pending: number;
+  rows: RawTerm[]; // one per fee-head (or single synthetic row)
 }
 
 // ─── Data transformation ────────────────────────────────────────────────────
@@ -198,6 +217,35 @@ function groupByFeeHead(terms: RawTerm[]): FeeHeadGroup[] {
     g.terms.push(t);
   }
   return Array.from(map.values()).sort((a, b) => a.displayOrder - b.displayOrder);
+}
+
+function groupByTerm(terms: RawTerm[]): TermGroup[] {
+  const map = new Map<string, TermGroup>();
+  for (const t of terms) {
+    const key = t.parent_term_id;
+    if (!map.has(key)) {
+      map.set(key, {
+        parentTermId: t.parent_term_id,
+        termNumber: t.term_number,
+        installmentName: t.installment_name,
+        dueDate: t.due_date,
+        status: "pending",
+        total: 0,
+        paid: 0,
+        pending: 0,
+        rows: [],
+      });
+    }
+    const g = map.get(key)!;
+    g.total += Number(t.term_amount);
+    g.paid += Number(t.paid_amount);
+    g.pending += termBalance(t);
+    g.rows.push(t);
+  }
+  for (const g of map.values()) {
+    g.status = g.pending <= 0.01 ? "paid" : g.paid > 0 ? "partial" : "pending";
+  }
+  return Array.from(map.values()).sort((a, b) => a.termNumber - b.termNumber);
 }
 
 function groupByMonth(terms: RawTerm[]): MonthGroup[] {
@@ -425,18 +473,38 @@ function FeesPage() {
       }
     }
 
-    // 6. Payments (recent transactions).
+    // 6. Payments (recent transactions) — include term/head/txn info.
     const { data: p } = await parentSupabase
       .from("fee_payments")
-      .select("id, amount, payment_date, payment_mode, receipt_number, status, is_deleted")
+      .select(
+        "id, amount, payment_date, payment_mode, receipt_number, transaction_id, status, is_deleted, term_number, fee_head_id, late_fee_amount, discount_amount, notes",
+      )
       .eq("student_id", studentId)
       .order("payment_date", { ascending: false });
 
+    // Resolve fee_head names for payments (cover heads not in items as well).
+    const payRows = ((p ?? []) as Array<FeePayment & { is_deleted: boolean | null }>).filter(
+      (x) => !x.is_deleted,
+    );
+    const payHeadIds = Array.from(
+      new Set(payRows.map((r) => r.fee_head_id).filter((x): x is string => !!x)),
+    );
+    const missingHeadIds = payHeadIds.filter((id) => !feeHeadMap.has(id));
+    if (missingHeadIds.length > 0) {
+      const { data: extra } = await parentSupabase
+        .from("fee_heads")
+        .select("id, fee_head_name, display_order, is_recurring")
+        .in("id", missingHeadIds);
+      for (const h of (extra ?? []) as FeeHead[]) feeHeadMap.set(h.id, h);
+    }
+    const enrichedPayments: FeePayment[] = payRows.map((r) => ({
+      ...r,
+      fee_head_name: r.fee_head_id ? (feeHeadMap.get(r.fee_head_id)?.fee_head_name ?? null) : null,
+    }));
+
     if (signal?.cancelled) return;
     setTerms(merged);
-    setPayments(
-      ((p ?? []) as Array<FeePayment & { is_deleted: boolean | null }>).filter((x) => !x.is_deleted),
-    );
+    setPayments(enrichedPayments);
   };
 
   useEffect(() => {
@@ -515,6 +583,7 @@ function FeesPage() {
 
   const feeGroups = groupByFeeHead(terms);
   const monthGroups = groupByMonth(terms);
+  const termGroups = groupByTerm(terms);
 
   const TABS: Array<{ key: Tab; label: string; icon: React.ReactNode }> = [
     { key: "details", label: "Fee Details", icon: <Wallet className="h-4 w-4" /> },
@@ -598,27 +667,20 @@ function FeesPage() {
                 <Skeleton className="h-14 w-full" />
                 <Skeleton className="h-14 w-full" />
               </div>
-            ) : feeGroups.length === 0 ? (
+            ) : termGroups.length === 0 ? (
               <p className="text-sm parent-muted">No fee details found for this student.</p>
             ) : (
-              <div className="space-y-2">
-                {/* Fee head breakdown header */}
-                <div className="mb-3 hidden grid-cols-[1fr_auto_auto_auto_auto] gap-3 px-4 text-xs font-medium uppercase tracking-wide parent-muted sm:grid">
-                  <span>Fee Head</span>
-                  <span className="text-right">Total</span>
-                  <span className="text-right">Paid</span>
-                  <span className="text-right">Pending</span>
-                  <span className="text-right">Status</span>
-                </div>
-
-                {feeGroups.map((group) => {
-                  const isOpen = expanded.has(group.key);
-                  const allPaid = group.pending <= 0;
+              <div className="space-y-3">
+                {termGroups.map((tg) => {
+                  const key = `term-${tg.parentTermId}`;
+                  const isOpen = expanded.has(key);
+                  const firstRow = tg.rows[0];
+                  const payable = tg.pending > 0.01;
                   return (
-                    <div key={group.key} className="overflow-hidden rounded-xl border border-border">
-                      {/* Fee head row — clickable header */}
+                    <div key={key} className="overflow-hidden rounded-xl border border-border">
+                      {/* Term header */}
                       <button
-                        onClick={() => toggleExpand(group.key)}
+                        onClick={() => toggleExpand(key)}
                         className="flex w-full items-center justify-between gap-3 bg-muted/30 px-4 py-3 text-left transition hover:bg-muted/50"
                       >
                         <div className="flex min-w-0 items-center gap-2">
@@ -627,75 +689,103 @@ function FeesPage() {
                           ) : (
                             <ChevronRight className="h-4 w-4 shrink-0 parent-muted" />
                           )}
-                          <span className="font-medium text-foreground">{group.name}</span>
-                          <span className="hidden text-xs parent-muted sm:inline">
-                            ({group.terms.length} installment{group.terms.length !== 1 ? "s" : ""})
-                          </span>
+                          <div className="min-w-0">
+                            <p className="font-semibold text-secondary">
+                              {tg.installmentName ?? `Term ${tg.termNumber}`}
+                            </p>
+                            <p className="text-xs parent-muted">
+                              Due {fmtDate(tg.dueDate)} · {tg.rows.length} fee head
+                              {tg.rows.length !== 1 ? "s" : ""}
+                            </p>
+                          </div>
                         </div>
                         <div className="flex shrink-0 items-center gap-4 text-sm">
-                          <span className="hidden text-right font-medium text-secondary sm:block">
-                            {fmt(group.total)}
-                          </span>
-                          <span className="hidden text-right text-emerald-600 sm:block">{fmt(group.paid)}</span>
-                          <span className="font-semibold text-destructive">{fmt(group.pending)}</span>
-                          <StatusBadge status={allPaid ? "paid" : group.paid > 0 ? "partial" : "pending"} />
+                          <div className="hidden text-right sm:block">
+                            <p className="text-[10px] uppercase parent-muted">Total</p>
+                            <p className="font-medium text-secondary">{fmt(tg.total)}</p>
+                          </div>
+                          <div className="hidden text-right sm:block">
+                            <p className="text-[10px] uppercase parent-muted">Paid</p>
+                            <p className="text-emerald-600">{fmt(tg.paid)}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-[10px] uppercase parent-muted">Pending</p>
+                            <p className="font-semibold text-destructive">{fmt(tg.pending)}</p>
+                          </div>
+                          <StatusBadge
+                            status={tg.status === "partial" ? "Partial Paid" : tg.status}
+                          />
+                          {payable && firstRow && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handlePay(firstRow);
+                              }}
+                              disabled={payingId === tg.parentTermId}
+                              className="glass-btn ml-1 inline-flex items-center gap-1 px-3 py-1.5 text-xs disabled:opacity-60"
+                            >
+                              <CreditCard className="h-3 w-3" />
+                              {payingId === tg.parentTermId ? "Processing…" : "Pay"}
+                            </button>
+                          )}
                         </div>
                       </button>
 
-                      {/* Expanded term rows */}
+                      {/* Fee head breakdown inside the term */}
                       {isOpen && (
                         <div className="overflow-x-auto">
                           <table className="w-full text-sm">
                             <thead>
                               <tr className="border-t border-border bg-muted/10 text-left text-xs parent-muted">
-                                <th className="px-4 py-2">Installment</th>
-                                <th className="px-3 py-2 text-right">Amount</th>
+                                <th className="px-4 py-2">Fee Head</th>
+                                <th className="px-3 py-2 text-right">Total</th>
                                 <th className="px-3 py-2 text-right">Paid</th>
-                                <th className="px-3 py-2 text-right">Balance</th>
-                                <th className="px-3 py-2">Due Date</th>
+                                <th className="px-3 py-2 text-right">Pending</th>
                                 <th className="px-3 py-2">Status</th>
-                                <th className="px-3 py-2">Action</th>
                               </tr>
                             </thead>
                             <tbody>
-                              {group.terms.map((t) => {
+                              {tg.rows.map((t) => {
                                 const bal = termBalance(t);
-                                const payable = bal > 0.01 && (t.status ?? "").toLowerCase() !== "paid";
+                                const headName =
+                                  t.fee_heads?.fee_head_name ??
+                                  t.installment_name ??
+                                  `Term ${t.term_number}`;
+                                const rowStatus =
+                                  bal <= 0.01
+                                    ? "paid"
+                                    : Number(t.paid_amount) > 0
+                                      ? "Partial Paid"
+                                      : "pending";
                                 return (
                                   <tr key={t.id} className="border-t border-border">
-                                    <td className="px-4 py-2.5 font-medium">
-                                      {t.installment_name ?? `Term ${t.term_number}`}
+                                    <td className="px-4 py-2.5 font-medium">{headName}</td>
+                                    <td className="px-3 py-2.5 text-right">
+                                      {fmt(Number(t.term_amount))}
                                     </td>
-                                    <td className="px-3 py-2.5 text-right">{fmt(Number(t.term_amount))}</td>
                                     <td className="px-3 py-2.5 text-right text-emerald-600">
                                       {fmt(Number(t.paid_amount))}
                                     </td>
                                     <td className="px-3 py-2.5 text-right font-medium text-destructive">
                                       {fmt(bal)}
                                     </td>
-                                    <td className="px-3 py-2.5 whitespace-nowrap parent-muted">
-                                      {fmtDate(t.due_date)}
-                                    </td>
                                     <td className="px-3 py-2.5">
-                                      <StatusBadge status={t.status} />
-                                    </td>
-                                    <td className="px-3 py-2.5">
-                                      {payable ? (
-                                        <button
-                                          onClick={() => handlePay(t)}
-                                          disabled={payingId === t.parent_term_id}
-                                          className="glass-btn inline-flex items-center gap-1 px-3 py-1 text-xs disabled:opacity-60"
-                                        >
-                                          <CreditCard className="h-3 w-3" />
-                                          {payingId === t.parent_term_id ? "Processing…" : "Pay"}
-                                        </button>
-                                      ) : (
-                                        <span className="text-xs parent-muted">—</span>
-                                      )}
+                                      <StatusBadge status={rowStatus} />
                                     </td>
                                   </tr>
                                 );
                               })}
+                              <tr className="border-t-2 border-border bg-muted/20 font-semibold">
+                                <td className="px-4 py-2.5">Term Total</td>
+                                <td className="px-3 py-2.5 text-right">{fmt(tg.total)}</td>
+                                <td className="px-3 py-2.5 text-right text-emerald-600">
+                                  {fmt(tg.paid)}
+                                </td>
+                                <td className="px-3 py-2.5 text-right text-destructive">
+                                  {fmt(tg.pending)}
+                                </td>
+                                <td className="px-3 py-2.5" />
+                              </tr>
                             </tbody>
                           </table>
                         </div>
@@ -745,45 +835,64 @@ function FeesPage() {
             ) : terms.length === 0 ? (
               <p className="text-sm parent-muted">No fee structure data available.</p>
             ) : structureView === "default" ? (
-              /* Default View — grouped by fee head */
+              /* Default View — grouped by TERM with fee head breakdown */
               <div className="space-y-5">
-                {feeGroups.map((group) => (
-                  <div key={group.key} className="rounded-xl border border-border overflow-hidden">
-                    <div className="flex items-center justify-between bg-muted/30 px-4 py-3">
-                      <span className="font-semibold text-secondary">{group.name}</span>
-                      <span className="text-sm font-bold text-primary">{fmt(group.total)}</span>
-                    </div>
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="border-t border-border text-left text-xs parent-muted">
-                            <th className="px-4 py-2">Installment</th>
-                            <th className="px-3 py-2 text-right">Amount</th>
-                            <th className="px-3 py-2">Due Date</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {group.terms.map((t) => (
-                            <tr key={t.id} className="border-t border-border">
-                              <td className="px-4 py-2.5">
-                                {t.installment_name ?? `Term ${t.term_number}`}
-                                {t.fee_heads && !t.fee_heads.is_recurring && (
-                                  <span className="ml-2 rounded-full bg-muted px-1.5 py-0.5 text-[10px] parent-muted">
-                                    one-time
-                                  </span>
-                                )}
-                              </td>
-                              <td className="px-3 py-2.5 text-right font-medium">
-                                {fmt(Number(t.term_amount))}
-                              </td>
-                              <td className="px-3 py-2.5 parent-muted">{fmtDate(t.due_date)}</td>
+                {termGroups.map((tg) => {
+                  return (
+                    <div key={tg.parentTermId} className="rounded-xl border border-border overflow-hidden">
+                      <div className="flex flex-wrap items-center justify-between gap-2 bg-muted/30 px-4 py-3">
+                        <div>
+                          <p className="font-semibold text-secondary">
+                            {tg.installmentName ?? `Term ${tg.termNumber}`}
+                          </p>
+                          <p className="text-xs parent-muted">
+                            Due Date: {fmtDate(tg.dueDate)}
+                            
+                          </p>
+                        </div>
+                        <span className="text-sm font-bold text-primary">{fmt(tg.total)}</span>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="border-t border-border text-left text-xs parent-muted">
+                              <th className="px-4 py-2">Fee Head</th>
+                              <th className="px-3 py-2">Category</th>
+                              <th className="px-3 py-2 text-right">Amount</th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                          </thead>
+                          <tbody>
+                            {tg.rows.map((t) => {
+                              const head = t.fee_heads;
+                              return (
+                                <tr key={t.id} className="border-t border-border">
+                                  <td className="px-4 py-2.5">
+                                    {head?.fee_head_name ?? t.installment_name ?? `Term ${t.term_number}`}
+                                    {head && !head.is_recurring && (
+                                      <span className="ml-2 rounded-full bg-muted px-1.5 py-0.5 text-[10px] parent-muted">
+                                        one-time
+                                      </span>
+                                    )}
+                                  </td>
+                                  <td className="px-3 py-2.5 parent-muted text-xs">
+                                    {head?.is_recurring ? "Recurring" : head ? "One-time" : "—"}
+                                  </td>
+                                  <td className="px-3 py-2.5 text-right font-medium">
+                                    {fmt(Number(t.term_amount))}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                            <tr className="border-t-2 border-border bg-muted/20 font-semibold">
+                              <td className="px-4 py-2.5" colSpan={2}>Total</td>
+                              <td className="px-3 py-2.5 text-right text-primary">{fmt(tg.total)}</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               /* Due Date Wise View — grouped by month */
@@ -840,7 +949,10 @@ function FeesPage() {
                     <tr className="text-left text-xs parent-muted">
                       <th className="pb-2 pr-4">Date</th>
                       <th className="pb-2 pr-4">Receipt No.</th>
+                      <th className="pb-2 pr-4">Fee Head</th>
+                      <th className="pb-2 pr-4">Term</th>
                       <th className="pb-2 pr-4">Mode</th>
+                      <th className="pb-2 pr-4">Txn ID</th>
                       <th className="pb-2 pr-4 text-right">Amount</th>
                       <th className="pb-2 pr-4">Status</th>
                     </tr>
@@ -850,8 +962,17 @@ function FeesPage() {
                       <tr key={p.id} className="border-t border-border">
                         <td className="py-2.5 pr-4 whitespace-nowrap">{fmtDate(p.payment_date)}</td>
                         <td className="py-2.5 pr-4 font-mono text-xs">{p.receipt_number ?? "—"}</td>
+                        <td className="py-2.5 pr-4">{p.fee_head_name ?? "—"}</td>
+                        <td className="py-2.5 pr-4 whitespace-nowrap">
+                          {p.term_number ? `Term ${p.term_number}` : "—"}
+                        </td>
                         <td className="py-2.5 pr-4 capitalize">{p.payment_mode ?? "—"}</td>
-                        <td className="py-2.5 pr-4 text-right font-medium">{fmt(Number(p.amount ?? 0))}</td>
+                        <td className="py-2.5 pr-4 font-mono text-[11px] parent-muted max-w-[140px] truncate">
+                          {p.transaction_id ?? "—"}
+                        </td>
+                        <td className="py-2.5 pr-4 text-right font-medium">
+                          {fmt(Number(p.amount ?? 0))}
+                        </td>
                         <td className="py-2.5 pr-4">
                           <StatusBadge status={p.status} />
                         </td>
