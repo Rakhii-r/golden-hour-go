@@ -11,7 +11,11 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json();
-    let { installment_id, amount } = body as { installment_id?: string; amount?: number };
+    let { installment_id, amount, item_ids } = body as {
+      installment_id?: string;
+      amount?: number;
+      item_ids?: string[];
+    };
     if (!amount || amount <= 0) {
       return json({ error: "positive amount required" }, 400);
     }
@@ -39,6 +43,39 @@ Deno.serve(async (req) => {
       .eq("user_id", userId)
       .maybeSingle();
     if (!pa?.student_id) return json({ error: "No student linked" }, 403);
+
+    // If item_ids provided, resolve their parent term and validate balance.
+    let validatedItems: Array<{ id: string; final_amount: number; paid_amount: number; balance: number; fee_head_id: string | null }> = [];
+    if (item_ids && item_ids.length > 0) {
+      const { data: itemRows, error: itErr } = await supabase
+        .from("student_fee_term_items")
+        .select("id, student_fee_term_id, student_id, final_amount, paid_amount, fee_head_id")
+        .in("id", item_ids);
+      if (itErr || !itemRows || itemRows.length === 0) {
+        return json({ error: "Invalid fee head selection" }, 404);
+      }
+      const termIds = new Set(itemRows.map((r) => r.student_fee_term_id));
+      if (termIds.size !== 1) return json({ error: "All selected fee heads must belong to the same term" }, 400);
+      for (const r of itemRows) {
+        if (r.student_id !== pa.student_id) return json({ error: "Forbidden" }, 403);
+      }
+      installment_id = itemRows[0].student_fee_term_id as string;
+      validatedItems = itemRows.map((r) => {
+        const total = Number(r.final_amount ?? 0);
+        const paid = Number(r.paid_amount ?? 0);
+        return {
+          id: r.id as string,
+          final_amount: total,
+          paid_amount: paid,
+          balance: Math.max(0, total - paid),
+          fee_head_id: (r.fee_head_id as string | null) ?? null,
+        };
+      });
+      const itemsBalance = validatedItems.reduce((s, x) => s + x.balance, 0);
+      if (Number(amount) > itemsBalance + 0.01) {
+        return json({ error: "Amount exceeds selected fee heads balance" }, 400);
+      }
+    }
 
     let term: {
       id: string;
@@ -72,7 +109,6 @@ Deno.serve(async (req) => {
         stu.academic_year ??
         `${new Date().getFullYear()}-${String((new Date().getFullYear() + 1) % 100).padStart(2, "0")}`;
 
-      // Reuse existing override if one already exists for this student/year
       const { data: existingOv } = await supabase
         .from("student_fee_overrides")
         .select("id")
@@ -100,14 +136,10 @@ Deno.serve(async (req) => {
           })
           .select("id")
           .single();
-        if (ovErr || !created) {
-          console.error("override insert failed", ovErr);
-          return json({ error: ovErr?.message ?? "Could not create fee plan" }, 500);
-        }
+        if (ovErr || !created) return json({ error: ovErr?.message ?? "Could not create fee plan" }, 500);
         ovIns = created;
       }
 
-      // Reuse a pending term if one already exists
       const { data: existingTerm } = await supabase
         .from("student_fee_terms")
         .select("id, student_id, organization_id, balance_amount, term_amount, paid_amount, installment_name, status")
@@ -120,36 +152,34 @@ Deno.serve(async (req) => {
         term = existingTerm;
         installment_id = existingTerm.id;
       } else {
-
-      const { data: termIns, error: termErr } = await supabase
-        .from("student_fee_terms")
-        .insert({
-          student_fee_override_id: ovIns.id,
-          organization_id: stu.organization_id,
-          student_id: stu.id,
-          term_number: 1,
-          installment_order: 1,
-          installment_name: "Full Payment",
-          term_amount: Number(amount),
-          paid_amount: 0,
-          balance_amount: Number(amount),
-          status: "pending",
-          academic_year: academicYear,
-        })
-        .select("id, student_id, organization_id, balance_amount, term_amount, paid_amount, installment_name, status")
-        .single();
-      if (termErr || !termIns) {
-        console.error("term insert failed", termErr);
-        return json({ error: termErr?.message ?? "Could not create installment" }, 500);
+        const { data: termIns, error: termErr } = await supabase
+          .from("student_fee_terms")
+          .insert({
+            student_fee_override_id: ovIns.id,
+            organization_id: stu.organization_id,
+            student_id: stu.id,
+            term_number: 1,
+            installment_order: 1,
+            installment_name: "Full Payment",
+            term_amount: Number(amount),
+            paid_amount: 0,
+            balance_amount: Number(amount),
+            status: "pending",
+            academic_year: academicYear,
+          })
+          .select("id, student_id, organization_id, balance_amount, term_amount, paid_amount, installment_name, status")
+          .single();
+        if (termErr || !termIns) return json({ error: termErr?.message ?? "Could not create installment" }, 500);
+        term = termIns;
+        installment_id = termIns.id;
       }
-      term = termIns;
-      installment_id = termIns.id;
-    }
     }
 
-    const balance = Number(term.balance_amount ?? Number(term.term_amount ?? 0) - Number(term.paid_amount ?? 0));
-    if (Number(amount) > balance + 0.01) {
-      return json({ error: "Amount exceeds balance" }, 400);
+    // For full-term mode, ensure amount doesn't exceed term balance. For item
+    // mode, we already checked against itemsBalance above.
+    if (validatedItems.length === 0) {
+      const balance = Number(term.balance_amount ?? Number(term.term_amount ?? 0) - Number(term.paid_amount ?? 0));
+      if (Number(amount) > balance + 0.01) return json({ error: "Amount exceeds balance" }, 400);
     }
 
     // Razorpay credentials
@@ -166,6 +196,14 @@ Deno.serve(async (req) => {
     if (!key_id || !key_secret) return json({ error: "Razorpay not configured for organization" }, 400);
 
     const receipt = `inst_${installment_id.slice(0, 8)}_${Date.now()}`.slice(0, 40);
+    const notes: Record<string, string> = {
+      installment_id: installment_id!,
+      student_id: term.student_id,
+      organization_id: term.organization_id,
+    };
+    if (validatedItems.length > 0) {
+      notes.item_ids = validatedItems.map((i) => i.id).join(",");
+    }
     const rzpRes = await fetch("https://api.razorpay.com/v1/orders", {
       method: "POST",
       headers: {
@@ -176,7 +214,7 @@ Deno.serve(async (req) => {
         amount: Math.round(Number(amount) * 100),
         currency: "INR",
         receipt,
-        notes: { installment_id, student_id: term.student_id, organization_id: term.organization_id },
+        notes,
       }),
     });
     const order = await rzpRes.json();
@@ -203,6 +241,7 @@ Deno.serve(async (req) => {
       currency: "INR",
       receipt,
       installment_id,
+      item_ids: validatedItems.map((i) => i.id),
     });
   } catch (e) {
     console.error("create-order error", e);
