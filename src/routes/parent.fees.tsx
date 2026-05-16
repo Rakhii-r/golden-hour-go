@@ -847,7 +847,7 @@ function FeesPage() {
                           </p>
                           <p className="text-xs parent-muted">
                             Due Date: {fmtDate(tg.dueDate)}
-                            {academicYear ? ` · AY ${academicYear}` : ""}
+                            
                           </p>
                         </div>
                         <span className="text-sm font-bold text-primary">{fmt(tg.total)}</span>
