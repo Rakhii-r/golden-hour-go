@@ -171,7 +171,26 @@ interface FeePayment {
   payment_date: string | null;
   payment_mode: string | null;
   receipt_number: string | null;
+  transaction_id: string | null;
   status: string | null;
+  term_number: number | null;
+  fee_head_id: string | null;
+  fee_head_name?: string | null;
+  late_fee_amount: number | null;
+  discount_amount: number | null;
+  notes: string | null;
+}
+
+interface TermGroup {
+  parentTermId: string;
+  termNumber: number;
+  installmentName: string | null;
+  dueDate: string | null;
+  status: string;
+  total: number;
+  paid: number;
+  pending: number;
+  rows: RawTerm[]; // one per fee-head (or single synthetic row)
 }
 
 // ─── Data transformation ────────────────────────────────────────────────────
