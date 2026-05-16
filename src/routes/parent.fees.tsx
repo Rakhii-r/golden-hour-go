@@ -319,6 +319,17 @@ function FeesPage() {
   const [pageLoading, setPageLoading] = useState(true);
   const [payingId, setPayingId] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  // Per-term selected item ids (student_fee_term_items.id)
+  const [selectedItems, setSelectedItems] = useState<Record<string, Set<string>>>({});
+
+  const toggleItemSelection = (parentTermId: string, itemId: string) =>
+    setSelectedItems((prev) => {
+      const next = { ...prev };
+      const set = new Set(next[parentTermId] ?? []);
+      set.has(itemId) ? set.delete(itemId) : set.add(itemId);
+      next[parentTermId] = set;
+      return next;
+    });
 
   const toggleExpand = (key: string) =>
     setExpanded((prev) => {
@@ -525,19 +536,25 @@ function FeesPage() {
     await reload();
   };
 
-  // ── Razorpay handler — pays the WHOLE parent term (Razorpay function expects
-  //    student_fee_terms.id; per-fee-head split rows share a parent_term_id).
-  const handlePay = async (term: RawTerm) => {
+  // Razorpay handler. If itemIds provided, only those fee heads will be paid
+  // and allocated by the verify function. Otherwise the whole term is paid.
+  const handlePay = async (
+    parentTermId: string,
+    amount: number,
+    descriptor: string,
+    itemIds?: string[],
+  ) => {
     if (!student) return;
-    const balance = term.parent_term_balance > 0 ? term.parent_term_balance : termBalance(term);
-    if (!balance || balance <= 0) { toast.info("This installment is already paid."); return; }
-    setPayingId(term.parent_term_id);
+    if (!amount || amount <= 0) { toast.info("Nothing to pay."); return; }
+    const payKey = itemIds && itemIds.length > 0 ? `${parentTermId}:${itemIds.join(",")}` : parentTermId;
+    setPayingId(payKey);
     try {
       const ok = await loadRazorpay();
       if (!ok) throw new Error("Failed to load Razorpay");
       const data = await invokeParentFunction<RazorpayOrderResponse>("razorpay-create-order", {
-        installment_id: term.parent_term_id,
-        amount: balance,
+        installment_id: parentTermId,
+        amount,
+        ...(itemIds && itemIds.length > 0 ? { item_ids: itemIds } : {}),
       });
       const rzp = new window.Razorpay({
         key: data.key_id,
@@ -546,9 +563,7 @@ function FeesPage() {
         currency: data.currency,
         name: organization?.name ?? "School",
         image: organization?.logo_url ?? undefined,
-        description: term.fee_heads?.fee_head_name
-          ? `${term.fee_heads.fee_head_name} — ${term.installment_name ?? ""}`
-          : (term.installment_name ?? "Fee installment"),
+        description: descriptor,
         prefill: { name: student.name ?? undefined },
         theme: { color: "#FF6B00" },
         config_id: "config_SmTmClnmVbHhKf",
@@ -560,11 +575,18 @@ function FeesPage() {
           try {
             const vData = await invokeParentFunction<VerifyPaymentResponse>("razorpay-verify-payment", {
               ...response,
-              installment_id: term.parent_term_id,
-              amount: balance,
+              installment_id: parentTermId,
+              amount,
+              ...(itemIds && itemIds.length > 0 ? { item_ids: itemIds } : {}),
             });
             if (!vData.success) throw new Error("Verification failed");
             toast.success("Payment successful");
+            // Clear selection for this term
+            setSelectedItems((prev) => {
+              const next = { ...prev };
+              delete next[parentTermId];
+              return next;
+            });
             await reloadAll();
           } catch (e) {
             toast.error(e instanceof Error ? e.message : "Payment verification failed");
@@ -674,8 +696,15 @@ function FeesPage() {
                 {termGroups.map((tg) => {
                   const key = `term-${tg.parentTermId}`;
                   const isOpen = expanded.has(key);
-                  const firstRow = tg.rows[0];
                   const payable = tg.pending > 0.01;
+                  // Only rows backed by real student_fee_term_items (have a fee_head)
+                  // can be selected individually. Fallback synthetic rows pay the whole term.
+                  const selectableRows = tg.rows.filter((r) => r.fee_head_id);
+                  const selectedSet = selectedItems[tg.parentTermId] ?? new Set<string>();
+                  const selectedRows = selectableRows.filter((r) => selectedSet.has(r.id));
+                  const selectedTotal = selectedRows.reduce((s, r) => s + termBalance(r), 0);
+                  const termPayKey = tg.parentTermId;
+                  const selectedPayKey = `${tg.parentTermId}:${selectedRows.map((r) => r.id).join(",")}`;
                   return (
                     <div key={key} className="overflow-hidden rounded-xl border border-border">
                       {/* Term header */}
@@ -715,17 +744,21 @@ function FeesPage() {
                           <StatusBadge
                             status={tg.status === "partial" ? "Partial Paid" : tg.status}
                           />
-                          {payable && firstRow && (
+                          {payable && (
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handlePay(firstRow);
+                                handlePay(
+                                  tg.parentTermId,
+                                  tg.pending,
+                                  tg.installmentName ?? `Term ${tg.termNumber}`,
+                                );
                               }}
-                              disabled={payingId === tg.parentTermId}
+                              disabled={payingId === termPayKey}
                               className="glass-btn ml-1 inline-flex items-center gap-1 px-3 py-1.5 text-xs disabled:opacity-60"
                             >
                               <CreditCard className="h-3 w-3" />
-                              {payingId === tg.parentTermId ? "Processing…" : "Pay"}
+                              {payingId === termPayKey ? "Processing…" : "Pay Full Term"}
                             </button>
                           )}
                         </div>
@@ -737,11 +770,13 @@ function FeesPage() {
                           <table className="w-full text-sm">
                             <thead>
                               <tr className="border-t border-border bg-muted/10 text-left text-xs parent-muted">
+                                <th className="px-3 py-2 w-8"></th>
                                 <th className="px-4 py-2">Fee Head</th>
                                 <th className="px-3 py-2 text-right">Total</th>
                                 <th className="px-3 py-2 text-right">Paid</th>
                                 <th className="px-3 py-2 text-right">Pending</th>
                                 <th className="px-3 py-2">Status</th>
+                                <th className="px-3 py-2 text-right">Action</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -757,8 +792,23 @@ function FeesPage() {
                                     : Number(t.paid_amount) > 0
                                       ? "Partial Paid"
                                       : "pending";
+                                const rowPayable = bal > 0.01;
+                                const isSelectable = !!t.fee_head_id;
+                                const isSelected = selectedSet.has(t.id);
+                                const rowPayKey = `${tg.parentTermId}:${t.id}`;
                                 return (
                                   <tr key={t.id} className="border-t border-border">
+                                    <td className="px-3 py-2.5">
+                                      {isSelectable && rowPayable && (
+                                        <input
+                                          type="checkbox"
+                                          checked={isSelected}
+                                          onChange={() => toggleItemSelection(tg.parentTermId, t.id)}
+                                          className="h-4 w-4 cursor-pointer accent-primary"
+                                          aria-label={`Select ${headName}`}
+                                        />
+                                      )}
+                                    </td>
                                     <td className="px-4 py-2.5 font-medium">{headName}</td>
                                     <td className="px-3 py-2.5 text-right">
                                       {fmt(Number(t.term_amount))}
@@ -772,10 +822,25 @@ function FeesPage() {
                                     <td className="px-3 py-2.5">
                                       <StatusBadge status={rowStatus} />
                                     </td>
+                                    <td className="px-3 py-2.5 text-right">
+                                      {isSelectable && rowPayable && (
+                                        <button
+                                          onClick={() =>
+                                            handlePay(tg.parentTermId, bal, headName, [t.id])
+                                          }
+                                          disabled={payingId === rowPayKey}
+                                          className="glass-btn inline-flex items-center gap-1 px-2.5 py-1 text-xs disabled:opacity-60"
+                                        >
+                                          <CreditCard className="h-3 w-3" />
+                                          {payingId === rowPayKey ? "…" : "Pay Now"}
+                                        </button>
+                                      )}
+                                    </td>
                                   </tr>
                                 );
                               })}
                               <tr className="border-t-2 border-border bg-muted/20 font-semibold">
+                                <td className="px-3 py-2.5" />
                                 <td className="px-4 py-2.5">Term Total</td>
                                 <td className="px-3 py-2.5 text-right">{fmt(tg.total)}</td>
                                 <td className="px-3 py-2.5 text-right text-emerald-600">
@@ -785,9 +850,44 @@ function FeesPage() {
                                   {fmt(tg.pending)}
                                 </td>
                                 <td className="px-3 py-2.5" />
+                                <td className="px-3 py-2.5" />
                               </tr>
                             </tbody>
                           </table>
+                          {/* Selection footer */}
+                          {selectableRows.length > 0 && payable && (
+                            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border bg-muted/10 px-4 py-3 text-sm">
+                              <div>
+                                <span className="parent-muted">Selected Total: </span>
+                                <span className="font-semibold text-secondary">
+                                  {fmt(selectedTotal)}
+                                </span>
+                                <span className="ml-2 text-xs parent-muted">
+                                  ({selectedRows.length} fee head
+                                  {selectedRows.length !== 1 ? "s" : ""})
+                                </span>
+                              </div>
+                              <button
+                                onClick={() =>
+                                  handlePay(
+                                    tg.parentTermId,
+                                    selectedTotal,
+                                    `${tg.installmentName ?? `Term ${tg.termNumber}`} — ${selectedRows.length} fee head${selectedRows.length !== 1 ? "s" : ""}`,
+                                    selectedRows.map((r) => r.id),
+                                  )
+                                }
+                                disabled={
+                                  selectedRows.length === 0 ||
+                                  selectedTotal <= 0 ||
+                                  payingId === selectedPayKey
+                                }
+                                className="glass-btn inline-flex items-center gap-1 px-3 py-1.5 text-xs disabled:opacity-60"
+                              >
+                                <CreditCard className="h-3 w-3" />
+                                {payingId === selectedPayKey ? "Processing…" : "Pay Selected"}
+                              </button>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>

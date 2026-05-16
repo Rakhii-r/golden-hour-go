@@ -17,6 +17,7 @@ Deno.serve(async (req) => {
       razorpay_signature,
       installment_id,
       amount,
+      item_ids,
     } = await req.json();
 
     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !installment_id) {
@@ -89,23 +90,118 @@ Deno.serve(async (req) => {
 
     const payAmount = Number(amount ?? order.amount);
     const today = new Date().toISOString().slice(0, 10);
-    const academicYear = `${new Date().getFullYear()}-${String((new Date().getFullYear() + 1) % 100).padStart(2, "0")}`;
 
-    const { error: payErr } = await supabase.from("fee_payments").insert({
-      student_id: order.student_id,
-      organization_id: order.organization_id,
-      amount: payAmount,
-      payment_mode: "razorpay",
-      payment_date: today,
-      transaction_id: razorpay_payment_id,
-      installment_id: order.installment_id,
-      status: "completed",
-      academic_year: academicYear,
-      receipt_number: `RZP-${razorpay_payment_id.slice(-10)}`,
-    });
-    if (payErr) {
-      console.error("fee_payments insert failed", payErr);
-      return json({ error: payErr.message }, 500);
+    // Resolve parent term + override (for academic_year + billing_type)
+    const { data: term } = await supabase
+      .from("student_fee_terms")
+      .select("id, term_number, term_amount, paid_amount, academic_year, student_fee_override_id")
+      .eq("id", order.installment_id)
+      .maybeSingle();
+    const academicYear =
+      term?.academic_year ??
+      `${new Date().getFullYear()}-${String((new Date().getFullYear() + 1) % 100).padStart(2, "0")}`;
+
+    // Allocate payAmount to selected items (in order) or proportionally to all
+    // items in the term when item_ids isn't provided.
+    let targetItems: Array<{ id: string; final_amount: number; paid_amount: number; balance: number; fee_head_id: string | null }> = [];
+    if (Array.isArray(item_ids) && item_ids.length > 0) {
+      const { data: rows } = await supabase
+        .from("student_fee_term_items")
+        .select("id, final_amount, paid_amount, fee_head_id, student_id")
+        .in("id", item_ids);
+      for (const r of (rows ?? [])) {
+        if (r.student_id !== order.student_id) continue;
+        const total = Number(r.final_amount ?? 0);
+        const paid = Number(r.paid_amount ?? 0);
+        targetItems.push({
+          id: r.id as string,
+          final_amount: total,
+          paid_amount: paid,
+          balance: Math.max(0, total - paid),
+          fee_head_id: (r.fee_head_id as string | null) ?? null,
+        });
+      }
+    } else {
+      const { data: rows } = await supabase
+        .from("student_fee_term_items")
+        .select("id, final_amount, paid_amount, fee_head_id")
+        .eq("student_fee_term_id", order.installment_id);
+      for (const r of (rows ?? [])) {
+        const total = Number(r.final_amount ?? 0);
+        const paid = Number(r.paid_amount ?? 0);
+        const bal = Math.max(0, total - paid);
+        if (bal <= 0) continue;
+        targetItems.push({
+          id: r.id as string,
+          final_amount: total,
+          paid_amount: paid,
+          balance: bal,
+          fee_head_id: (r.fee_head_id as string | null) ?? null,
+        });
+      }
+    }
+
+    // Allocate sequentially (full pay each until amount is exhausted)
+    let remaining = payAmount;
+    const allocations: Array<{ item: typeof targetItems[number]; amount: number }> = [];
+    for (const it of targetItems) {
+      if (remaining <= 0.001) break;
+      const give = Math.min(it.balance, remaining);
+      if (give <= 0) continue;
+      allocations.push({ item: it, amount: Number(give.toFixed(2)) });
+      remaining = Number((remaining - give).toFixed(2));
+    }
+
+    // Persist: one fee_payments row per allocated fee head (or one row if no items)
+    if (allocations.length > 0) {
+      const rows = allocations.map((a, idx) => ({
+        student_id: order.student_id,
+        organization_id: order.organization_id,
+        amount: a.amount,
+        payment_mode: "razorpay",
+        payment_date: today,
+        transaction_id: razorpay_payment_id,
+        installment_id: order.installment_id,
+        status: "completed",
+        academic_year: academicYear,
+        receipt_number: `RZP-${razorpay_payment_id.slice(-10)}-${idx + 1}`,
+        term_number: term?.term_number ?? null,
+        fee_head_id: a.item.fee_head_id,
+        billing_type: "term_wise",
+      }));
+      const { error: payErr } = await supabase.from("fee_payments").insert(rows);
+      if (payErr) {
+        console.error("fee_payments insert failed", payErr);
+        return json({ error: payErr.message }, 500);
+      }
+      // Update each item's paid_amount
+      for (const a of allocations) {
+        const newPaid = Number((a.item.paid_amount + a.amount).toFixed(2));
+        await supabase
+          .from("student_fee_term_items")
+          .update({ paid_amount: newPaid })
+          .eq("id", a.item.id);
+      }
+    } else {
+      // Fallback: no items — single payment row
+      const { error: payErr } = await supabase.from("fee_payments").insert({
+        student_id: order.student_id,
+        organization_id: order.organization_id,
+        amount: payAmount,
+        payment_mode: "razorpay",
+        payment_date: today,
+        transaction_id: razorpay_payment_id,
+        installment_id: order.installment_id,
+        status: "completed",
+        academic_year: academicYear,
+        receipt_number: `RZP-${razorpay_payment_id.slice(-10)}`,
+        term_number: term?.term_number ?? null,
+        billing_type: "term_wise",
+      });
+      if (payErr) {
+        console.error("fee_payments insert failed", payErr);
+        return json({ error: payErr.message }, 500);
+      }
     }
 
     await supabase
@@ -113,12 +209,7 @@ Deno.serve(async (req) => {
       .update({ status: "paid", razorpay_payment_id })
       .eq("id", order.id);
 
-    // Best-effort term update if no trigger handles it
-    const { data: term } = await supabase
-      .from("student_fee_terms")
-      .select("term_amount, paid_amount")
-      .eq("id", order.installment_id)
-      .maybeSingle();
+    // Update parent term totals (best-effort if no trigger handles it)
     if (term) {
       const newPaid = Number(term.paid_amount ?? 0) + payAmount;
       const newBalance = Math.max(0, Number(term.term_amount ?? 0) - newPaid);
