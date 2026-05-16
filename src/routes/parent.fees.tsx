@@ -583,6 +583,7 @@ function FeesPage() {
 
   const feeGroups = groupByFeeHead(terms);
   const monthGroups = groupByMonth(terms);
+  const termGroups = groupByTerm(terms);
 
   const TABS: Array<{ key: Tab; label: string; icon: React.ReactNode }> = [
     { key: "details", label: "Fee Details", icon: <Wallet className="h-4 w-4" /> },
