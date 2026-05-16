@@ -219,6 +219,35 @@ function groupByFeeHead(terms: RawTerm[]): FeeHeadGroup[] {
   return Array.from(map.values()).sort((a, b) => a.displayOrder - b.displayOrder);
 }
 
+function groupByTerm(terms: RawTerm[]): TermGroup[] {
+  const map = new Map<string, TermGroup>();
+  for (const t of terms) {
+    const key = t.parent_term_id;
+    if (!map.has(key)) {
+      map.set(key, {
+        parentTermId: t.parent_term_id,
+        termNumber: t.term_number,
+        installmentName: t.installment_name,
+        dueDate: t.due_date,
+        status: "pending",
+        total: 0,
+        paid: 0,
+        pending: 0,
+        rows: [],
+      });
+    }
+    const g = map.get(key)!;
+    g.total += Number(t.term_amount);
+    g.paid += Number(t.paid_amount);
+    g.pending += termBalance(t);
+    g.rows.push(t);
+  }
+  for (const g of map.values()) {
+    g.status = g.pending <= 0.01 ? "paid" : g.paid > 0 ? "partial" : "pending";
+  }
+  return Array.from(map.values()).sort((a, b) => a.termNumber - b.termNumber);
+}
+
 function groupByMonth(terms: RawTerm[]): MonthGroup[] {
   const map = new Map<string, MonthGroup>();
   for (const t of terms) {
