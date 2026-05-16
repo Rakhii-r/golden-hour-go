@@ -319,6 +319,17 @@ function FeesPage() {
   const [pageLoading, setPageLoading] = useState(true);
   const [payingId, setPayingId] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  // Per-term selected item ids (student_fee_term_items.id)
+  const [selectedItems, setSelectedItems] = useState<Record<string, Set<string>>>({});
+
+  const toggleItemSelection = (parentTermId: string, itemId: string) =>
+    setSelectedItems((prev) => {
+      const next = { ...prev };
+      const set = new Set(next[parentTermId] ?? []);
+      set.has(itemId) ? set.delete(itemId) : set.add(itemId);
+      next[parentTermId] = set;
+      return next;
+    });
 
   const toggleExpand = (key: string) =>
     setExpanded((prev) => {
