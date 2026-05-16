@@ -953,7 +953,10 @@ function FeesPage() {
                     <tr className="text-left text-xs parent-muted">
                       <th className="pb-2 pr-4">Date</th>
                       <th className="pb-2 pr-4">Receipt No.</th>
+                      <th className="pb-2 pr-4">Fee Head</th>
+                      <th className="pb-2 pr-4">Term</th>
                       <th className="pb-2 pr-4">Mode</th>
+                      <th className="pb-2 pr-4">Txn ID</th>
                       <th className="pb-2 pr-4 text-right">Amount</th>
                       <th className="pb-2 pr-4">Status</th>
                     </tr>
@@ -963,8 +966,17 @@ function FeesPage() {
                       <tr key={p.id} className="border-t border-border">
                         <td className="py-2.5 pr-4 whitespace-nowrap">{fmtDate(p.payment_date)}</td>
                         <td className="py-2.5 pr-4 font-mono text-xs">{p.receipt_number ?? "—"}</td>
+                        <td className="py-2.5 pr-4">{p.fee_head_name ?? "—"}</td>
+                        <td className="py-2.5 pr-4 whitespace-nowrap">
+                          {p.term_number ? `Term ${p.term_number}` : "—"}
+                        </td>
                         <td className="py-2.5 pr-4 capitalize">{p.payment_mode ?? "—"}</td>
-                        <td className="py-2.5 pr-4 text-right font-medium">{fmt(Number(p.amount ?? 0))}</td>
+                        <td className="py-2.5 pr-4 font-mono text-[11px] parent-muted max-w-[140px] truncate">
+                          {p.transaction_id ?? "—"}
+                        </td>
+                        <td className="py-2.5 pr-4 text-right font-medium">
+                          {fmt(Number(p.amount ?? 0))}
+                        </td>
                         <td className="py-2.5 pr-4">
                           <StatusBadge status={p.status} />
                         </td>
