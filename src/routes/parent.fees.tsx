@@ -696,8 +696,15 @@ function FeesPage() {
                 {termGroups.map((tg) => {
                   const key = `term-${tg.parentTermId}`;
                   const isOpen = expanded.has(key);
-                  const firstRow = tg.rows[0];
                   const payable = tg.pending > 0.01;
+                  // Only rows backed by real student_fee_term_items (have a fee_head)
+                  // can be selected individually. Fallback synthetic rows pay the whole term.
+                  const selectableRows = tg.rows.filter((r) => r.fee_head_id);
+                  const selectedSet = selectedItems[tg.parentTermId] ?? new Set<string>();
+                  const selectedRows = selectableRows.filter((r) => selectedSet.has(r.id));
+                  const selectedTotal = selectedRows.reduce((s, r) => s + termBalance(r), 0);
+                  const termPayKey = tg.parentTermId;
+                  const selectedPayKey = `${tg.parentTermId}:${selectedRows.map((r) => r.id).join(",")}`;
                   return (
                     <div key={key} className="overflow-hidden rounded-xl border border-border">
                       {/* Term header */}
@@ -737,17 +744,21 @@ function FeesPage() {
                           <StatusBadge
                             status={tg.status === "partial" ? "Partial Paid" : tg.status}
                           />
-                          {payable && firstRow && (
+                          {payable && (
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handlePay(firstRow);
+                                handlePay(
+                                  tg.parentTermId,
+                                  tg.pending,
+                                  tg.installmentName ?? `Term ${tg.termNumber}`,
+                                );
                               }}
-                              disabled={payingId === tg.parentTermId}
+                              disabled={payingId === termPayKey}
                               className="glass-btn ml-1 inline-flex items-center gap-1 px-3 py-1.5 text-xs disabled:opacity-60"
                             >
                               <CreditCard className="h-3 w-3" />
-                              {payingId === tg.parentTermId ? "Processing…" : "Pay"}
+                              {payingId === termPayKey ? "Processing…" : "Pay Full Term"}
                             </button>
                           )}
                         </div>
@@ -759,11 +770,13 @@ function FeesPage() {
                           <table className="w-full text-sm">
                             <thead>
                               <tr className="border-t border-border bg-muted/10 text-left text-xs parent-muted">
+                                <th className="px-3 py-2 w-8"></th>
                                 <th className="px-4 py-2">Fee Head</th>
                                 <th className="px-3 py-2 text-right">Total</th>
                                 <th className="px-3 py-2 text-right">Paid</th>
                                 <th className="px-3 py-2 text-right">Pending</th>
                                 <th className="px-3 py-2">Status</th>
+                                <th className="px-3 py-2 text-right">Action</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -779,8 +792,23 @@ function FeesPage() {
                                     : Number(t.paid_amount) > 0
                                       ? "Partial Paid"
                                       : "pending";
+                                const rowPayable = bal > 0.01;
+                                const isSelectable = !!t.fee_head_id;
+                                const isSelected = selectedSet.has(t.id);
+                                const rowPayKey = `${tg.parentTermId}:${t.id}`;
                                 return (
                                   <tr key={t.id} className="border-t border-border">
+                                    <td className="px-3 py-2.5">
+                                      {isSelectable && rowPayable && (
+                                        <input
+                                          type="checkbox"
+                                          checked={isSelected}
+                                          onChange={() => toggleItemSelection(tg.parentTermId, t.id)}
+                                          className="h-4 w-4 cursor-pointer accent-primary"
+                                          aria-label={`Select ${headName}`}
+                                        />
+                                      )}
+                                    </td>
                                     <td className="px-4 py-2.5 font-medium">{headName}</td>
                                     <td className="px-3 py-2.5 text-right">
                                       {fmt(Number(t.term_amount))}
@@ -794,10 +822,25 @@ function FeesPage() {
                                     <td className="px-3 py-2.5">
                                       <StatusBadge status={rowStatus} />
                                     </td>
+                                    <td className="px-3 py-2.5 text-right">
+                                      {isSelectable && rowPayable && (
+                                        <button
+                                          onClick={() =>
+                                            handlePay(tg.parentTermId, bal, headName, [t.id])
+                                          }
+                                          disabled={payingId === rowPayKey}
+                                          className="glass-btn inline-flex items-center gap-1 px-2.5 py-1 text-xs disabled:opacity-60"
+                                        >
+                                          <CreditCard className="h-3 w-3" />
+                                          {payingId === rowPayKey ? "…" : "Pay Now"}
+                                        </button>
+                                      )}
+                                    </td>
                                   </tr>
                                 );
                               })}
                               <tr className="border-t-2 border-border bg-muted/20 font-semibold">
+                                <td className="px-3 py-2.5" />
                                 <td className="px-4 py-2.5">Term Total</td>
                                 <td className="px-3 py-2.5 text-right">{fmt(tg.total)}</td>
                                 <td className="px-3 py-2.5 text-right text-emerald-600">
@@ -807,9 +850,44 @@ function FeesPage() {
                                   {fmt(tg.pending)}
                                 </td>
                                 <td className="px-3 py-2.5" />
+                                <td className="px-3 py-2.5" />
                               </tr>
                             </tbody>
                           </table>
+                          {/* Selection footer */}
+                          {selectableRows.length > 0 && payable && (
+                            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border bg-muted/10 px-4 py-3 text-sm">
+                              <div>
+                                <span className="parent-muted">Selected Total: </span>
+                                <span className="font-semibold text-secondary">
+                                  {fmt(selectedTotal)}
+                                </span>
+                                <span className="ml-2 text-xs parent-muted">
+                                  ({selectedRows.length} fee head
+                                  {selectedRows.length !== 1 ? "s" : ""})
+                                </span>
+                              </div>
+                              <button
+                                onClick={() =>
+                                  handlePay(
+                                    tg.parentTermId,
+                                    selectedTotal,
+                                    `${tg.installmentName ?? `Term ${tg.termNumber}`} — ${selectedRows.length} fee head${selectedRows.length !== 1 ? "s" : ""}`,
+                                    selectedRows.map((r) => r.id),
+                                  )
+                                }
+                                disabled={
+                                  selectedRows.length === 0 ||
+                                  selectedTotal <= 0 ||
+                                  payingId === selectedPayKey
+                                }
+                                className="glass-btn inline-flex items-center gap-1 px-3 py-1.5 text-xs disabled:opacity-60"
+                              >
+                                <CreditCard className="h-3 w-3" />
+                                {payingId === selectedPayKey ? "Processing…" : "Pay Selected"}
+                              </button>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
