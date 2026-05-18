@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Megaphone, Paperclip, Download, ExternalLink, X } from "lucide-react";
+import { Megaphone, Paperclip, Download, ExternalLink } from "lucide-react";
 import { RequireParentAuth } from "@/components/parent/RequireParentAuth";
 import { ParentLayout } from "@/components/parent/ParentLayout";
 import {
