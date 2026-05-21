@@ -209,9 +209,9 @@ Deno.serve(async (req) => {
         installment_id: order.installment_id,
         status: "completed",
         academic_year: academicYear,
-        receipt_number: `RZP-${razorpay_payment_id.slice(-10)}`,
+        receipt_number: `${receiptPrefix}-${razorpay_payment_id.slice(-10)}`,
         term_number: term?.term_number ?? null,
-        billing_type: "term_wise",
+        billing_type: billingType,
       });
       if (payErr) {
         console.error("fee_payments insert failed", payErr);
