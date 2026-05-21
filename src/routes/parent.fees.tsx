@@ -651,6 +651,22 @@ function FeesPage() {
   const monthGroups = groupByMonth(terms);
   const termGroups = groupByTerm(terms);
 
+  // Per-section totals computed from this section's terms only — never mixed.
+  const totalFees = terms.reduce((s, t) => s + Number(t.term_amount), 0);
+  const paidFees = terms.reduce((s, t) => s + Number(t.paid_amount), 0);
+  const pendingFees = terms.reduce((s, t) => s + termBalance(t), 0);
+  const nextDueDate = (() => {
+    const today = new Date().toISOString().slice(0, 10);
+    const upcoming = termGroups
+      .filter((g) => g.pending > 0.01 && g.dueDate)
+      .map((g) => g.dueDate!)
+      .filter((d) => d >= today)
+      .sort();
+    return upcoming[0] ?? null;
+  })();
+
+  const sectionLabel = section === "daycare" ? "Daycare Fees" : "School Fees";
+
   const TABS: Array<{ key: Tab; label: string; icon: React.ReactNode }> = [
     { key: "details", label: "Fee Details", icon: <Wallet className="h-4 w-4" /> },
     { key: "structure", label: "Fee Structure", icon: <LayoutList className="h-4 w-4" /> },
@@ -681,28 +697,61 @@ function FeesPage() {
         </div>
       </div>
 
-      {/* ── Summary cards ── */}
+      {/* ── Section selector (School vs Daycare) — only when both exist ── */}
+      {availableSections.daycare && availableSections.school && (
+        <div className="inline-flex rounded-xl border border-border bg-muted/30 p-1">
+          {([
+            { key: "school" as const, label: "School Fees" },
+            { key: "daycare" as const, label: "Daycare Fees" },
+          ]).map((s) => (
+            <button
+              key={s.key}
+              onClick={() => {
+                if (s.key === section) return;
+                setSection(s.key);
+                setExpanded(new Set());
+                setSelectedItems({});
+                setActiveTab("details");
+              }}
+              className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
+                section === s.key
+                  ? "bg-primary text-primary-foreground shadow"
+                  : "text-foreground hover:bg-muted"
+              }`}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* ── Summary cards (scoped to active section) ── */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <SummaryCard label="Total Fees" value={fees ? fmt(fees.total) : "—"} loading={loading && !fees} />
+        <SummaryCard
+          label={`Total ${sectionLabel}`}
+          value={pageLoading ? "—" : fmt(totalFees)}
+          loading={pageLoading}
+        />
         <SummaryCard
           label="Paid"
-          value={fees ? fmt(fees.paid) : "—"}
-          loading={loading && !fees}
+          value={pageLoading ? "—" : fmt(paidFees)}
+          loading={pageLoading}
           accent="text-emerald-600"
         />
         <SummaryCard
           label="Pending"
-          value={fees ? fmt(fees.pending) : "—"}
-          loading={loading && !fees}
+          value={pageLoading ? "—" : fmt(pendingFees)}
+          loading={pageLoading}
           accent="text-destructive"
         />
         <div className="glass p-5">
           <p className="text-sm parent-muted">Next Due</p>
           <p className="mt-2 text-base font-semibold text-secondary">
-            {fees?.nextDueDate ? fmtDate(fees.nextDueDate) : "—"}
+            {nextDueDate ? fmtDate(nextDueDate) : "—"}
           </p>
         </div>
       </div>
+
 
       {/* ── Tabs ── */}
       <div className="glass overflow-hidden">
