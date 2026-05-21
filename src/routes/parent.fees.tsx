@@ -309,9 +309,15 @@ function SummaryCard({
 
 type Tab = "details" | "structure" | "transactions";
 type StructureView = "default" | "duedate";
+type Section = "school" | "daycare";
 
 function FeesPage() {
-  const { student, studentId, fees, organization, loading, reload } = useParentDashboardCtx();
+  const { student, studentId, organization, reload } = useParentDashboardCtx();
+  const [section, setSection] = useState<Section>("school");
+  const [availableSections, setAvailableSections] = useState<{ school: boolean; daycare: boolean }>({
+    school: true,
+    daycare: false,
+  });
   const [activeTab, setActiveTab] = useState<Tab>("details");
   const [structureView, setStructureView] = useState<StructureView>("default");
   const [terms, setTerms] = useState<RawTerm[]>([]);
@@ -338,18 +344,46 @@ function FeesPage() {
       return next;
     });
 
+  // Detect which fee sections (school / daycare) the student has.
+  useEffect(() => {
+    if (!studentId) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await parentSupabase
+        .from("student_fee_overrides")
+        .select("id, billing_type")
+        .eq("student_id", studentId);
+      if (cancelled) return;
+      const rows = (data ?? []) as Array<{ id: string; billing_type: string | null }>;
+      const school = rows.some((r) => r.billing_type !== "daycare");
+      const daycare = rows.some((r) => r.billing_type === "daycare");
+      setAvailableSections({ school: school || !daycare, daycare });
+      // If only daycare exists, switch to it.
+      if (!school && daycare) setSection("daycare");
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [studentId]);
+
   // Loads terms (latest override) + per-fee-head items + payments. Mirrors CRM.
   const loadFeeData = async (signal?: { cancelled: boolean }) => {
     if (!studentId) return;
 
-    // 1. Pick the LATEST override for this student (matches what CRM displays).
-    const { data: latestOverride } = await parentSupabase
+    // 1. Pick the LATEST override for the active section. School = anything
+    //    that isn't billing_type='daycare' (covers null/term_wise); Daycare =
+    //    billing_type='daycare'.
+    let overrideQuery = parentSupabase
       .from("student_fee_overrides")
-      .select("id")
+      .select("id, billing_type")
       .eq("student_id", studentId)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+      .order("created_at", { ascending: false });
+    if (section === "daycare") {
+      overrideQuery = overrideQuery.eq("billing_type", "daycare");
+    } else {
+      overrideQuery = overrideQuery.or("billing_type.is.null,billing_type.neq.daycare");
+    }
+    const { data: latestOverride } = await overrideQuery.limit(1).maybeSingle();
     const overrideId = (latestOverride as { id?: string } | null)?.id ?? null;
 
     // 2. Parent terms (student_fee_terms). NOTE: this table has no fee_head_id /
@@ -377,15 +411,17 @@ function FeesPage() {
         .order("term_number", { ascending: true });
       parentTerms = (data ?? []) as ParentTermRow[];
     }
-    // Legacy fallback — terms tied directly to student with no override.
-    if (parentTerms.length === 0) {
+    // Legacy fallback (school only) — terms tied directly to student with no override.
+    if (parentTerms.length === 0 && section === "school") {
       const { data } = await parentSupabase
         .from("student_fee_terms")
         .select(TERM_COLS)
         .eq("student_id", studentId)
+        .is("student_fee_override_id", null)
         .order("term_number", { ascending: true });
       parentTerms = (data ?? []) as ParentTermRow[];
     }
+
 
     // 3. Per-fee-head splits (student_fee_term_items) — mirrors CRM "per Fee Head".
     type ItemRow = {
@@ -484,19 +520,23 @@ function FeesPage() {
       }
     }
 
-    // 6. Payments (recent transactions) — include term/head/txn info.
-    const { data: p } = await parentSupabase
-      .from("fee_payments")
-      .select(
-        "id, amount, payment_date, payment_mode, receipt_number, transaction_id, status, is_deleted, term_number, fee_head_id, late_fee_amount, discount_amount, notes",
-      )
-      .eq("student_id", studentId)
-      .order("payment_date", { ascending: false });
-
-    // Resolve fee_head names for payments (cover heads not in items as well).
-    const payRows = ((p ?? []) as Array<FeePayment & { is_deleted: boolean | null }>).filter(
-      (x) => !x.is_deleted,
-    );
+    // 6. Payments (recent transactions) — scoped to THIS section's terms via
+    //    installment_id so school and daycare payments never mix.
+    const termIds = parentTerms.map((t) => t.id);
+    let payRows: Array<FeePayment & { is_deleted: boolean | null }> = [];
+    if (termIds.length > 0) {
+      const { data: p } = await parentSupabase
+        .from("fee_payments")
+        .select(
+          "id, amount, payment_date, payment_mode, receipt_number, transaction_id, status, is_deleted, term_number, fee_head_id, late_fee_amount, discount_amount, notes, installment_id",
+        )
+        .eq("student_id", studentId)
+        .in("installment_id", termIds)
+        .order("payment_date", { ascending: false });
+      payRows = ((p ?? []) as Array<FeePayment & { is_deleted: boolean | null }>).filter(
+        (x) => !x.is_deleted,
+      );
+    }
     const payHeadIds = Array.from(
       new Set(payRows.map((r) => r.fee_head_id).filter((x): x is string => !!x)),
     );
@@ -529,12 +569,16 @@ function FeesPage() {
       signal.cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [studentId]);
+  }, [studentId, section]);
 
+  // Payments are scoped to the current section by linking through their
+  // installment_id → student_fee_terms → student_fee_overrides.billing_type.
+  // We already filtered terms by section, so further filter the payments list.
   const reloadAll = async () => {
     await loadFeeData();
     await reload();
   };
+
 
   // Razorpay handler. If itemIds provided, only those fee heads will be paid
   // and allocated by the verify function. Otherwise the whole term is paid.
@@ -607,6 +651,22 @@ function FeesPage() {
   const monthGroups = groupByMonth(terms);
   const termGroups = groupByTerm(terms);
 
+  // Per-section totals computed from this section's terms only — never mixed.
+  const totalFees = terms.reduce((s, t) => s + Number(t.term_amount), 0);
+  const paidFees = terms.reduce((s, t) => s + Number(t.paid_amount), 0);
+  const pendingFees = terms.reduce((s, t) => s + termBalance(t), 0);
+  const nextDueDate = (() => {
+    const today = new Date().toISOString().slice(0, 10);
+    const upcoming = termGroups
+      .filter((g) => g.pending > 0.01 && g.dueDate)
+      .map((g) => g.dueDate!)
+      .filter((d) => d >= today)
+      .sort();
+    return upcoming[0] ?? null;
+  })();
+
+  const sectionLabel = section === "daycare" ? "Daycare Fees" : "School Fees";
+
   const TABS: Array<{ key: Tab; label: string; icon: React.ReactNode }> = [
     { key: "details", label: "Fee Details", icon: <Wallet className="h-4 w-4" /> },
     { key: "structure", label: "Fee Structure", icon: <LayoutList className="h-4 w-4" /> },
@@ -637,28 +697,61 @@ function FeesPage() {
         </div>
       </div>
 
-      {/* ── Summary cards ── */}
+      {/* ── Section selector (School vs Daycare) — only when both exist ── */}
+      {availableSections.daycare && availableSections.school && (
+        <div className="inline-flex rounded-xl border border-border bg-muted/30 p-1">
+          {([
+            { key: "school" as const, label: "School Fees" },
+            { key: "daycare" as const, label: "Daycare Fees" },
+          ]).map((s) => (
+            <button
+              key={s.key}
+              onClick={() => {
+                if (s.key === section) return;
+                setSection(s.key);
+                setExpanded(new Set());
+                setSelectedItems({});
+                setActiveTab("details");
+              }}
+              className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
+                section === s.key
+                  ? "bg-primary text-primary-foreground shadow"
+                  : "text-foreground hover:bg-muted"
+              }`}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* ── Summary cards (scoped to active section) ── */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <SummaryCard label="Total Fees" value={fees ? fmt(fees.total) : "—"} loading={loading && !fees} />
+        <SummaryCard
+          label={`Total ${sectionLabel}`}
+          value={pageLoading ? "—" : fmt(totalFees)}
+          loading={pageLoading}
+        />
         <SummaryCard
           label="Paid"
-          value={fees ? fmt(fees.paid) : "—"}
-          loading={loading && !fees}
+          value={pageLoading ? "—" : fmt(paidFees)}
+          loading={pageLoading}
           accent="text-emerald-600"
         />
         <SummaryCard
           label="Pending"
-          value={fees ? fmt(fees.pending) : "—"}
-          loading={loading && !fees}
+          value={pageLoading ? "—" : fmt(pendingFees)}
+          loading={pageLoading}
           accent="text-destructive"
         />
         <div className="glass p-5">
           <p className="text-sm parent-muted">Next Due</p>
           <p className="mt-2 text-base font-semibold text-secondary">
-            {fees?.nextDueDate ? fmtDate(fees.nextDueDate) : "—"}
+            {nextDueDate ? fmtDate(nextDueDate) : "—"}
           </p>
         </div>
       </div>
+
 
       {/* ── Tabs ── */}
       <div className="glass overflow-hidden">
