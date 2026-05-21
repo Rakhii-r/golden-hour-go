@@ -25,12 +25,35 @@ interface AuthStoreState {
   initialized: boolean;
 }
 
+// Try to seed user/session synchronously from Supabase's localStorage to
+// avoid a "Loading…" flash on every hard refresh. Supabase persists the
+// session under the storageKey configured in parent-supabase.ts.
+const seedFromStorage = (): Partial<AuthStoreState> => {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = window.localStorage.getItem("edugrow-parent-auth");
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    const session = (parsed?.currentSession ?? parsed) as Session | null;
+    if (session?.user) {
+      let cachedStudent: ParentStudent | null = null;
+      try {
+        const s = window.localStorage.getItem(SELECTED_KEY);
+        if (s) cachedStudent = JSON.parse(s);
+      } catch {}
+      return { session, user: session.user, student: cachedStudent, loading: false };
+    }
+  } catch {}
+  return {};
+};
+
 const store: AuthStoreState = {
   session: null,
   user: null,
   student: null,
   loading: true,
   initialized: false,
+  ...seedFromStorage(),
 };
 
 const listeners = new Set<() => void>();
