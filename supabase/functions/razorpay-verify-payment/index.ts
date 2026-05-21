@@ -179,10 +179,10 @@ Deno.serve(async (req) => {
         installment_id: order.installment_id,
         status: "completed",
         academic_year: academicYear,
-        receipt_number: `RZP-${razorpay_payment_id.slice(-10)}-${idx + 1}`,
+        receipt_number: `${receiptPrefix}-${razorpay_payment_id.slice(-10)}-${idx + 1}`,
         term_number: term?.term_number ?? null,
         fee_head_id: a.item.fee_head_id,
-        billing_type: "term_wise",
+        billing_type: billingType,
       }));
       const { error: payErr } = await supabase.from("fee_payments").insert(rows);
       if (payErr) {
