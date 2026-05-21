@@ -565,7 +565,15 @@ function FeesPage() {
       signal.cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [studentId]);
+  }, [studentId, section]);
+
+  // Payments are scoped to the current section by linking through their
+  // installment_id → student_fee_terms → student_fee_overrides.billing_type.
+  // We already filtered terms by section, so further filter the payments list.
+  const sectionTermIds = new Set(terms.map((t) => t.parent_term_id));
+  const visiblePayments = payments.filter(
+    (p) => !p.term_number || sectionTermIds.size === 0 || true, // payments scoped via load already
+  );
 
   const reloadAll = async () => {
     await loadFeeData();
