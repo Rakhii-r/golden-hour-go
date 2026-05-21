@@ -101,6 +101,21 @@ Deno.serve(async (req) => {
       term?.academic_year ??
       `${new Date().getFullYear()}-${String((new Date().getFullYear() + 1) % 100).padStart(2, "0")}`;
 
+    // Resolve billing_type from the parent override so school and daycare
+    // payments are recorded with the correct billing_type and receipt prefix.
+    let billingType: "term_wise" | "daycare" = "term_wise";
+    if (term?.student_fee_override_id) {
+      const { data: ov } = await supabase
+        .from("student_fee_overrides")
+        .select("billing_type")
+        .eq("id", term.student_fee_override_id)
+        .maybeSingle();
+      if ((ov as { billing_type?: string } | null)?.billing_type === "daycare") {
+        billingType = "daycare";
+      }
+    }
+    const receiptPrefix = billingType === "daycare" ? "DF" : "SF";
+
     // Allocate payAmount to selected items (in order) or proportionally to all
     // items in the term when item_ids isn't provided.
     let targetItems: Array<{ id: string; final_amount: number; paid_amount: number; balance: number; fee_head_id: string | null }> = [];
