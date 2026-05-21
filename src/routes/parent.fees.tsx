@@ -309,9 +309,15 @@ function SummaryCard({
 
 type Tab = "details" | "structure" | "transactions";
 type StructureView = "default" | "duedate";
+type Section = "school" | "daycare";
 
 function FeesPage() {
-  const { student, studentId, fees, organization, loading, reload } = useParentDashboardCtx();
+  const { student, studentId, organization, reload } = useParentDashboardCtx();
+  const [section, setSection] = useState<Section>("school");
+  const [availableSections, setAvailableSections] = useState<{ school: boolean; daycare: boolean }>({
+    school: true,
+    daycare: false,
+  });
   const [activeTab, setActiveTab] = useState<Tab>("details");
   const [structureView, setStructureView] = useState<StructureView>("default");
   const [terms, setTerms] = useState<RawTerm[]>([]);
@@ -337,6 +343,28 @@ function FeesPage() {
       next.has(key) ? next.delete(key) : next.add(key);
       return next;
     });
+
+  // Detect which fee sections (school / daycare) the student has.
+  useEffect(() => {
+    if (!studentId) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await parentSupabase
+        .from("student_fee_overrides")
+        .select("id, billing_type")
+        .eq("student_id", studentId);
+      if (cancelled) return;
+      const rows = (data ?? []) as Array<{ id: string; billing_type: string | null }>;
+      const school = rows.some((r) => r.billing_type !== "daycare");
+      const daycare = rows.some((r) => r.billing_type === "daycare");
+      setAvailableSections({ school: school || !daycare, daycare });
+      // If only daycare exists, switch to it.
+      if (!school && daycare) setSection("daycare");
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [studentId]);
 
   // Loads terms (latest override) + per-fee-head items + payments. Mirrors CRM.
   const loadFeeData = async (signal?: { cancelled: boolean }) => {
