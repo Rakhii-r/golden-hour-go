@@ -520,19 +520,23 @@ function FeesPage() {
       }
     }
 
-    // 6. Payments (recent transactions) — include term/head/txn info.
-    const { data: p } = await parentSupabase
-      .from("fee_payments")
-      .select(
-        "id, amount, payment_date, payment_mode, receipt_number, transaction_id, status, is_deleted, term_number, fee_head_id, late_fee_amount, discount_amount, notes",
-      )
-      .eq("student_id", studentId)
-      .order("payment_date", { ascending: false });
-
-    // Resolve fee_head names for payments (cover heads not in items as well).
-    const payRows = ((p ?? []) as Array<FeePayment & { is_deleted: boolean | null }>).filter(
-      (x) => !x.is_deleted,
-    );
+    // 6. Payments (recent transactions) — scoped to THIS section's terms via
+    //    installment_id so school and daycare payments never mix.
+    const termIds = parentTerms.map((t) => t.id);
+    let payRows: Array<FeePayment & { is_deleted: boolean | null }> = [];
+    if (termIds.length > 0) {
+      const { data: p } = await parentSupabase
+        .from("fee_payments")
+        .select(
+          "id, amount, payment_date, payment_mode, receipt_number, transaction_id, status, is_deleted, term_number, fee_head_id, late_fee_amount, discount_amount, notes, installment_id",
+        )
+        .eq("student_id", studentId)
+        .in("installment_id", termIds)
+        .order("payment_date", { ascending: false });
+      payRows = ((p ?? []) as Array<FeePayment & { is_deleted: boolean | null }>).filter(
+        (x) => !x.is_deleted,
+      );
+    }
     const payHeadIds = Array.from(
       new Set(payRows.map((r) => r.fee_head_id).filter((x): x is string => !!x)),
     );
