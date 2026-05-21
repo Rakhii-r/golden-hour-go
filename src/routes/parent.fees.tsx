@@ -574,15 +574,11 @@ function FeesPage() {
   // Payments are scoped to the current section by linking through their
   // installment_id → student_fee_terms → student_fee_overrides.billing_type.
   // We already filtered terms by section, so further filter the payments list.
-  const sectionTermIds = new Set(terms.map((t) => t.parent_term_id));
-  const visiblePayments = payments.filter(
-    (p) => !p.term_number || sectionTermIds.size === 0 || true, // payments scoped via load already
-  );
-
   const reloadAll = async () => {
     await loadFeeData();
     await reload();
   };
+
 
   // Razorpay handler. If itemIds provided, only those fee heads will be paid
   // and allocated by the verify function. Otherwise the whole term is paid.
