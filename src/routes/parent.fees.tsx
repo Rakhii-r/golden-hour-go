@@ -370,14 +370,20 @@ function FeesPage() {
   const loadFeeData = async (signal?: { cancelled: boolean }) => {
     if (!studentId) return;
 
-    // 1. Pick the LATEST override for this student (matches what CRM displays).
-    const { data: latestOverride } = await parentSupabase
+    // 1. Pick the LATEST override for the active section. School = anything
+    //    that isn't billing_type='daycare' (covers null/term_wise); Daycare =
+    //    billing_type='daycare'.
+    let overrideQuery = parentSupabase
       .from("student_fee_overrides")
-      .select("id")
+      .select("id, billing_type")
       .eq("student_id", studentId)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+      .order("created_at", { ascending: false });
+    if (section === "daycare") {
+      overrideQuery = overrideQuery.eq("billing_type", "daycare");
+    } else {
+      overrideQuery = overrideQuery.or("billing_type.is.null,billing_type.neq.daycare");
+    }
+    const { data: latestOverride } = await overrideQuery.limit(1).maybeSingle();
     const overrideId = (latestOverride as { id?: string } | null)?.id ?? null;
 
     // 2. Parent terms (student_fee_terms). NOTE: this table has no fee_head_id /
@@ -405,15 +411,17 @@ function FeesPage() {
         .order("term_number", { ascending: true });
       parentTerms = (data ?? []) as ParentTermRow[];
     }
-    // Legacy fallback — terms tied directly to student with no override.
-    if (parentTerms.length === 0) {
+    // Legacy fallback (school only) — terms tied directly to student with no override.
+    if (parentTerms.length === 0 && section === "school") {
       const { data } = await parentSupabase
         .from("student_fee_terms")
         .select(TERM_COLS)
         .eq("student_id", studentId)
+        .is("student_fee_override_id", null)
         .order("term_number", { ascending: true });
       parentTerms = (data ?? []) as ParentTermRow[];
     }
+
 
     // 3. Per-fee-head splits (student_fee_term_items) — mirrors CRM "per Fee Head".
     type ItemRow = {
