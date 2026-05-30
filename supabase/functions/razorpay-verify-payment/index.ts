@@ -16,13 +16,13 @@ Deno.serve(async (req) => {
       razorpay_payment_id,
       razorpay_signature,
       installment_id,
-      amount,
       item_ids,
     } = await req.json();
 
     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !installment_id) {
       return json({ error: "Missing parameters" }, 400);
     }
+
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -88,8 +88,10 @@ Deno.serve(async (req) => {
       return json({ success: true, duplicate: true });
     }
 
-    const payAmount = Number(amount ?? order.amount);
+    // Use trusted server-side order amount; never trust client-supplied amount.
+    const payAmount = Number(order.amount);
     const today = new Date().toISOString().slice(0, 10);
+
 
     // Resolve parent term + override (for academic_year + billing_type)
     const { data: term } = await supabase
@@ -187,8 +189,9 @@ Deno.serve(async (req) => {
       const { error: payErr } = await supabase.from("fee_payments").insert(rows);
       if (payErr) {
         console.error("fee_payments insert failed", payErr);
-        return json({ error: payErr.message }, 500);
+        return json({ error: "Payment recording failed. Please contact support." }, 500);
       }
+
       // Update each item's paid_amount
       for (const a of allocations) {
         const newPaid = Number((a.item.paid_amount + a.amount).toFixed(2));
@@ -215,8 +218,9 @@ Deno.serve(async (req) => {
       });
       if (payErr) {
         console.error("fee_payments insert failed", payErr);
-        return json({ error: payErr.message }, 500);
+        return json({ error: "Payment recording failed. Please contact support." }, 500);
       }
+
     }
 
     await supabase
@@ -241,8 +245,9 @@ Deno.serve(async (req) => {
     return json({ success: true });
   } catch (e) {
     console.error("verify-payment error", e);
-    return json({ error: e instanceof Error ? e.message : "Unknown error" }, 500);
+    return json({ error: "Unable to verify payment. Please contact support." }, 500);
   }
+
 });
 
 function json(body: unknown, status = 200) {
