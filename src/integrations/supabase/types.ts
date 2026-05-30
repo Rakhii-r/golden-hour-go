@@ -14,6 +14,59 @@ export type Database = {
   }
   public: {
     Tables: {
+      absence_alert_settings: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          id: string
+          include_school_logo: boolean
+          language: string
+          organization_id: string
+          reminder_threshold_days: number
+          template_en: string
+          template_te: string
+          threshold_days: number
+          updated_at: string
+          whatsapp_enabled: boolean
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          include_school_logo?: boolean
+          language?: string
+          organization_id: string
+          reminder_threshold_days?: number
+          template_en?: string
+          template_te?: string
+          threshold_days?: number
+          updated_at?: string
+          whatsapp_enabled?: boolean
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          include_school_logo?: boolean
+          language?: string
+          organization_id?: string
+          reminder_threshold_days?: number
+          template_en?: string
+          template_te?: string
+          threshold_days?: number
+          updated_at?: string
+          whatsapp_enabled?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "absence_alert_settings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       academic_planner_audit: {
         Row: {
           action: string
@@ -2501,6 +2554,69 @@ export type Database = {
           },
         ]
       }
+      conversations: {
+        Row: {
+          conversation_type: string
+          created_at: string
+          id: string
+          is_archived: boolean
+          last_message: string | null
+          last_message_at: string | null
+          organization_id: string
+          parent_id: string
+          parent_unread_count: number
+          student_id: string
+          teacher_id: string
+          teacher_unread_count: number
+          updated_at: string
+        }
+        Insert: {
+          conversation_type?: string
+          created_at?: string
+          id?: string
+          is_archived?: boolean
+          last_message?: string | null
+          last_message_at?: string | null
+          organization_id: string
+          parent_id: string
+          parent_unread_count?: number
+          student_id: string
+          teacher_id: string
+          teacher_unread_count?: number
+          updated_at?: string
+        }
+        Update: {
+          conversation_type?: string
+          created_at?: string
+          id?: string
+          is_archived?: boolean
+          last_message?: string | null
+          last_message_at?: string | null
+          organization_id?: string
+          parent_id?: string
+          parent_unread_count?: number
+          student_id?: string
+          teacher_id?: string
+          teacher_unread_count?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students_or_clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       core_roles: {
         Row: {
           created_at: string | null
@@ -2525,6 +2641,57 @@ export type Database = {
           name?: string
           permissions?: Json | null
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      custom_document_themes: {
+        Row: {
+          asset_paths: string[]
+          created_at: string
+          created_by: string | null
+          description: string | null
+          html_content: string | null
+          id: string
+          is_active: boolean
+          module_type: string
+          organization_id: string
+          preview_thumbnail_path: string | null
+          reference_pdf_path: string | null
+          theme_name: string
+          theme_type: string | null
+          updated_at: string
+        }
+        Insert: {
+          asset_paths?: string[]
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          html_content?: string | null
+          id?: string
+          is_active?: boolean
+          module_type: string
+          organization_id: string
+          preview_thumbnail_path?: string | null
+          reference_pdf_path?: string | null
+          theme_name: string
+          theme_type?: string | null
+          updated_at?: string
+        }
+        Update: {
+          asset_paths?: string[]
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          html_content?: string | null
+          id?: string
+          is_active?: boolean
+          module_type?: string
+          organization_id?: string
+          preview_thumbnail_path?: string | null
+          reference_pdf_path?: string | null
+          theme_name?: string
+          theme_type?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -2616,6 +2783,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      daycare_config: {
+        Row: {
+          base_monthly_fee: number
+          created_at: string
+          duration_overrides: Json
+          month_working_days: Json
+          organization_id: string
+          updated_at: string
+        }
+        Insert: {
+          base_monthly_fee?: number
+          created_at?: string
+          duration_overrides?: Json
+          month_working_days?: Json
+          organization_id: string
+          updated_at?: string
+        }
+        Update: {
+          base_monthly_fee?: number
+          created_at?: string
+          duration_overrides?: Json
+          month_working_days?: Json
+          organization_id?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       daycare_monthly_usage: {
         Row: {
@@ -3430,6 +3624,7 @@ export type Database = {
           id: string
           is_deleted: boolean
           organization_id: string
+          paid_amount: number
           payment_mode: string
           receipt_url: string | null
           status: string
@@ -3462,6 +3657,7 @@ export type Database = {
           id?: string
           is_deleted?: boolean
           organization_id: string
+          paid_amount?: number
           payment_mode?: string
           receipt_url?: string | null
           status?: string
@@ -3494,6 +3690,7 @@ export type Database = {
           id?: string
           is_deleted?: boolean
           organization_id?: string
+          paid_amount?: number
           payment_mode?: string
           receipt_url?: string | null
           status?: string
@@ -4273,35 +4470,89 @@ export type Database = {
           },
         ]
       }
+      holiday_ranges: {
+        Row: {
+          applies_to: string
+          blocks_month: boolean
+          created_at: string
+          description: string | null
+          end_date: string
+          holiday_type: string
+          id: string
+          is_active: boolean
+          name: string
+          organization_id: string
+          start_date: string
+          updated_at: string
+        }
+        Insert: {
+          applies_to?: string
+          blocks_month?: boolean
+          created_at?: string
+          description?: string | null
+          end_date: string
+          holiday_type?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          organization_id: string
+          start_date: string
+          updated_at?: string
+        }
+        Update: {
+          applies_to?: string
+          blocks_month?: boolean
+          created_at?: string
+          description?: string | null
+          end_date?: string
+          holiday_type?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          organization_id?: string
+          start_date?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       holidays: {
         Row: {
+          applies_to: string
           created_at: string | null
           description: string | null
           holiday_date: string
           holiday_name: string
+          holiday_type: string
           id: string
           is_active: boolean | null
           organization_id: string
+          source_planner_id: string | null
           updated_at: string | null
         }
         Insert: {
+          applies_to?: string
           created_at?: string | null
           description?: string | null
           holiday_date: string
           holiday_name: string
+          holiday_type?: string
           id?: string
           is_active?: boolean | null
           organization_id: string
+          source_planner_id?: string | null
           updated_at?: string | null
         }
         Update: {
+          applies_to?: string
           created_at?: string | null
           description?: string | null
           holiday_date?: string
           holiday_name?: string
+          holiday_type?: string
           id?: string
           is_active?: boolean | null
           organization_id?: string
+          source_planner_id?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -4418,6 +4669,39 @@ export type Database = {
           },
         ]
       }
+      leave_audit_logs: {
+        Row: {
+          action: string
+          actor_id: string | null
+          actor_name: string | null
+          created_at: string
+          details: Json | null
+          id: string
+          leave_id: string | null
+          organization_id: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          actor_name?: string | null
+          created_at?: string
+          details?: Json | null
+          id?: string
+          leave_id?: string | null
+          organization_id: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          actor_name?: string | null
+          created_at?: string
+          details?: Json | null
+          id?: string
+          leave_id?: string | null
+          organization_id?: string
+        }
+        Relationships: []
+      }
       leave_balances: {
         Row: {
           created_at: string
@@ -4497,6 +4781,104 @@ export type Database = {
           },
         ]
       }
+      leave_extensions: {
+        Row: {
+          additional_days: number
+          created_at: string
+          id: string
+          leave_id: string
+          new_end_date: string
+          organization_id: string
+          original_end_date: string
+          reason: string
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          additional_days?: number
+          created_at?: string
+          id?: string
+          leave_id: string
+          new_end_date: string
+          organization_id: string
+          original_end_date: string
+          reason: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          additional_days?: number
+          created_at?: string
+          id?: string
+          leave_id?: string
+          new_end_date?: string
+          organization_id?: string
+          original_end_date?: string
+          reason?: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leave_extensions_leave_id_fkey"
+            columns: ["leave_id"]
+            isOneToOne: false
+            referencedRelation: "leaves"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leave_policies: {
+        Row: {
+          block_negative_balance: boolean
+          block_overlapping: boolean
+          block_public_holiday: boolean
+          created_at: string
+          enforce_holiday_month_block: boolean
+          enforce_monthly_limit: boolean
+          max_leaves_per_month: number
+          organization_id: string
+          override_roles: string[]
+          updated_at: string
+        }
+        Insert: {
+          block_negative_balance?: boolean
+          block_overlapping?: boolean
+          block_public_holiday?: boolean
+          created_at?: string
+          enforce_holiday_month_block?: boolean
+          enforce_monthly_limit?: boolean
+          max_leaves_per_month?: number
+          organization_id: string
+          override_roles?: string[]
+          updated_at?: string
+        }
+        Update: {
+          block_negative_balance?: boolean
+          block_overlapping?: boolean
+          block_public_holiday?: boolean
+          created_at?: string
+          enforce_holiday_month_block?: boolean
+          enforce_monthly_limit?: boolean
+          max_leaves_per_month?: number
+          organization_id?: string
+          override_roles?: string[]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       leave_settings: {
         Row: {
           allow_carry_forward: boolean
@@ -4506,9 +4888,14 @@ export type Database = {
           casual_leave_enabled: boolean
           casual_leave_per_month: number
           created_at: string
+          default_working_days_per_month: number
           id: string
           max_days_per_request: number
+          no_paid_leave_bonus_enabled: boolean
           organization_id: string
+          permission_max_duration_minutes: number
+          permission_monthly_limit: number
+          permission_system_enabled: boolean
           require_approval: boolean
           sick_allow_future_dates: boolean
           sick_allow_past_dates: boolean
@@ -4527,9 +4914,14 @@ export type Database = {
           casual_leave_enabled?: boolean
           casual_leave_per_month?: number
           created_at?: string
+          default_working_days_per_month?: number
           id?: string
           max_days_per_request?: number
+          no_paid_leave_bonus_enabled?: boolean
           organization_id: string
+          permission_max_duration_minutes?: number
+          permission_monthly_limit?: number
+          permission_system_enabled?: boolean
           require_approval?: boolean
           sick_allow_future_dates?: boolean
           sick_allow_past_dates?: boolean
@@ -4548,9 +4940,14 @@ export type Database = {
           casual_leave_enabled?: boolean
           casual_leave_per_month?: number
           created_at?: string
+          default_working_days_per_month?: number
           id?: string
           max_days_per_request?: number
+          no_paid_leave_bonus_enabled?: boolean
           organization_id?: string
+          permission_max_duration_minutes?: number
+          permission_monthly_limit?: number
+          permission_system_enabled?: boolean
           require_approval?: boolean
           sick_allow_future_dates?: boolean
           sick_allow_past_dates?: boolean
@@ -4571,69 +4968,189 @@ export type Database = {
           },
         ]
       }
+      leave_types: {
+        Row: {
+          academic_year_limit: boolean
+          allow_half_day: boolean
+          applies_to: string
+          auto_approve: boolean
+          carry_forward: boolean
+          code: string
+          color: string
+          created_at: string
+          description: string | null
+          document_required: boolean
+          id: string
+          ignore_holiday_month_block: boolean
+          ignore_monthly_restriction: boolean
+          is_active: boolean
+          is_paid: boolean
+          is_system: boolean
+          max_consecutive_days: number | null
+          max_days_per_year: number | null
+          min_advance_days: number
+          name: string
+          organization_id: string
+          salary_deduction_enabled: boolean
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          academic_year_limit?: boolean
+          allow_half_day?: boolean
+          applies_to?: string
+          auto_approve?: boolean
+          carry_forward?: boolean
+          code: string
+          color?: string
+          created_at?: string
+          description?: string | null
+          document_required?: boolean
+          id?: string
+          ignore_holiday_month_block?: boolean
+          ignore_monthly_restriction?: boolean
+          is_active?: boolean
+          is_paid?: boolean
+          is_system?: boolean
+          max_consecutive_days?: number | null
+          max_days_per_year?: number | null
+          min_advance_days?: number
+          name: string
+          organization_id: string
+          salary_deduction_enabled?: boolean
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          academic_year_limit?: boolean
+          allow_half_day?: boolean
+          applies_to?: string
+          auto_approve?: boolean
+          carry_forward?: boolean
+          code?: string
+          color?: string
+          created_at?: string
+          description?: string | null
+          document_required?: boolean
+          id?: string
+          ignore_holiday_month_block?: boolean
+          ignore_monthly_restriction?: boolean
+          is_active?: boolean
+          is_paid?: boolean
+          is_system?: boolean
+          max_consecutive_days?: number | null
+          max_days_per_year?: number | null
+          min_advance_days?: number
+          name?: string
+          organization_id?: string
+          salary_deduction_enabled?: boolean
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       leaves: {
         Row: {
           applied_at: string
           approved_at: string | null
           approved_by: string | null
+          attendance_mark: string | null
           created_at: string
+          document_url: string | null
+          emergency_contact: string | null
           end_date: string
           half_day: string | null
+          half_day_period: string | null
           id: string
+          is_paid: boolean | null
           leave_type: string
+          leave_type_id: string | null
+          lop_days: number | null
           notes: string | null
           organization_id: string
+          original_requested_days: number | null
+          policy_overridden_by: string | null
           reason: string | null
           rejection_reason: string | null
           role: string
+          sandwich_applied: boolean
+          sandwich_days: number
           start_date: string
           status: string
+          substitute_user_id: string | null
           total_days: number
           updated_at: string
           user_id: string
           user_name: string
+          working_days_count: number | null
         }
         Insert: {
           applied_at?: string
           approved_at?: string | null
           approved_by?: string | null
+          attendance_mark?: string | null
           created_at?: string
+          document_url?: string | null
+          emergency_contact?: string | null
           end_date: string
           half_day?: string | null
+          half_day_period?: string | null
           id?: string
+          is_paid?: boolean | null
           leave_type?: string
+          leave_type_id?: string | null
+          lop_days?: number | null
           notes?: string | null
           organization_id: string
+          original_requested_days?: number | null
+          policy_overridden_by?: string | null
           reason?: string | null
           rejection_reason?: string | null
           role?: string
+          sandwich_applied?: boolean
+          sandwich_days?: number
           start_date: string
           status?: string
+          substitute_user_id?: string | null
           total_days?: number
           updated_at?: string
           user_id: string
           user_name: string
+          working_days_count?: number | null
         }
         Update: {
           applied_at?: string
           approved_at?: string | null
           approved_by?: string | null
+          attendance_mark?: string | null
           created_at?: string
+          document_url?: string | null
+          emergency_contact?: string | null
           end_date?: string
           half_day?: string | null
+          half_day_period?: string | null
           id?: string
+          is_paid?: boolean | null
           leave_type?: string
+          leave_type_id?: string | null
+          lop_days?: number | null
           notes?: string | null
           organization_id?: string
+          original_requested_days?: number | null
+          policy_overridden_by?: string | null
           reason?: string | null
           rejection_reason?: string | null
           role?: string
+          sandwich_applied?: boolean
+          sandwich_days?: number
           start_date?: string
           status?: string
+          substitute_user_id?: string | null
           total_days?: number
           updated_at?: string
           user_id?: string
           user_name?: string
+          working_days_count?: number | null
         }
         Relationships: [
           {
@@ -5072,6 +5589,79 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      messages: {
+        Row: {
+          attachment_url: string | null
+          conversation_id: string
+          created_at: string
+          id: string
+          is_read: boolean
+          message: string
+          organization_id: string
+          read_at: string | null
+          receiver_id: string
+          receiver_role: string
+          sender_id: string
+          sender_role: string
+          student_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          attachment_url?: string | null
+          conversation_id: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message: string
+          organization_id: string
+          read_at?: string | null
+          receiver_id: string
+          receiver_role: string
+          sender_id: string
+          sender_role: string
+          student_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          attachment_url?: string | null
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          organization_id?: string
+          read_at?: string | null
+          receiver_id?: string
+          receiver_role?: string
+          sender_id?: string
+          sender_role?: string
+          student_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students_or_clients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       messaging_settings: {
         Row: {
@@ -5787,6 +6377,7 @@ export type Database = {
           gender: string | null
           id: string
           joining_date: string | null
+          must_change_password: boolean
           name: string
           organization_id: string | null
           phone: string | null
@@ -5815,6 +6406,7 @@ export type Database = {
           gender?: string | null
           id: string
           joining_date?: string | null
+          must_change_password?: boolean
           name: string
           organization_id?: string | null
           phone?: string | null
@@ -5843,6 +6435,7 @@ export type Database = {
           gender?: string | null
           id?: string
           joining_date?: string | null
+          must_change_password?: boolean
           name?: string
           organization_id?: string | null
           phone?: string | null
@@ -6109,7 +6702,9 @@ export type Database = {
       }
       salary_payments: {
         Row: {
+          attendance_bonus: number
           base_salary: number
+          bonus_eligible: boolean
           created_at: string
           created_by: string | null
           id: string
@@ -6124,8 +6719,10 @@ export type Database = {
           month: number
           net_salary: number
           organization_id: string
+          paid_leave_days: number | null
           payment_date: string
           payment_mode: string
+          per_day_salary: number | null
           period_allowances: number | null
           period_deductions: number | null
           salary_config_id: string | null
@@ -6142,10 +6739,14 @@ export type Database = {
           transaction_id: string | null
           unpaid_leave_days: number | null
           updated_at: string
+          worked_days: number | null
+          working_days_in_month: number | null
           year: number
         }
         Insert: {
+          attendance_bonus?: number
           base_salary: number
+          bonus_eligible?: boolean
           created_at?: string
           created_by?: string | null
           id?: string
@@ -6160,8 +6761,10 @@ export type Database = {
           month: number
           net_salary: number
           organization_id: string
+          paid_leave_days?: number | null
           payment_date: string
           payment_mode?: string
+          per_day_salary?: number | null
           period_allowances?: number | null
           period_deductions?: number | null
           salary_config_id?: string | null
@@ -6178,10 +6781,14 @@ export type Database = {
           transaction_id?: string | null
           unpaid_leave_days?: number | null
           updated_at?: string
+          worked_days?: number | null
+          working_days_in_month?: number | null
           year: number
         }
         Update: {
+          attendance_bonus?: number
           base_salary?: number
+          bonus_eligible?: boolean
           created_at?: string
           created_by?: string | null
           id?: string
@@ -6196,8 +6803,10 @@ export type Database = {
           month?: number
           net_salary?: number
           organization_id?: string
+          paid_leave_days?: number | null
           payment_date?: string
           payment_mode?: string
+          per_day_salary?: number | null
           period_allowances?: number | null
           period_deductions?: number | null
           salary_config_id?: string | null
@@ -6214,6 +6823,8 @@ export type Database = {
           transaction_id?: string | null
           unpaid_leave_days?: number | null
           updated_at?: string
+          worked_days?: number | null
+          working_days_in_month?: number | null
           year?: number
         }
         Relationships: [
@@ -6232,6 +6843,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      sandwich_leave_policies: {
+        Row: {
+          apply_to_festival_holidays: boolean
+          apply_to_public_holidays: boolean
+          apply_to_school_holidays: boolean
+          apply_to_unpaid: boolean
+          apply_to_vacation_days: boolean
+          apply_to_weekends: boolean
+          created_at: string
+          enabled: boolean
+          leave_type_codes: string[]
+          organization_id: string
+          updated_at: string
+        }
+        Insert: {
+          apply_to_festival_holidays?: boolean
+          apply_to_public_holidays?: boolean
+          apply_to_school_holidays?: boolean
+          apply_to_unpaid?: boolean
+          apply_to_vacation_days?: boolean
+          apply_to_weekends?: boolean
+          created_at?: string
+          enabled?: boolean
+          leave_type_codes?: string[]
+          organization_id: string
+          updated_at?: string
+        }
+        Update: {
+          apply_to_festival_holidays?: boolean
+          apply_to_public_holidays?: boolean
+          apply_to_school_holidays?: boolean
+          apply_to_unpaid?: boolean
+          apply_to_vacation_days?: boolean
+          apply_to_weekends?: boolean
+          created_at?: string
+          enabled?: boolean
+          leave_type_codes?: string[]
+          organization_id?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       sections: {
         Row: {
@@ -6321,6 +6974,72 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      staff_permissions: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          document_url: string | null
+          duration_minutes: number
+          emergency_contact: string | null
+          from_time: string
+          id: string
+          organization_id: string
+          permission_date: string
+          reason: string
+          rejection_reason: string | null
+          role: string | null
+          staff_id: string
+          staff_name: string | null
+          status: string
+          to_time: string
+          updated_at: string
+          withdrawn_at: string | null
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          document_url?: string | null
+          duration_minutes: number
+          emergency_contact?: string | null
+          from_time: string
+          id?: string
+          organization_id: string
+          permission_date: string
+          reason: string
+          rejection_reason?: string | null
+          role?: string | null
+          staff_id: string
+          staff_name?: string | null
+          status?: string
+          to_time: string
+          updated_at?: string
+          withdrawn_at?: string | null
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          document_url?: string | null
+          duration_minutes?: number
+          emergency_contact?: string | null
+          from_time?: string
+          id?: string
+          organization_id?: string
+          permission_date?: string
+          reason?: string
+          rejection_reason?: string | null
+          role?: string | null
+          staff_id?: string
+          staff_name?: string | null
+          status?: string
+          to_time?: string
+          updated_at?: string
+          withdrawn_at?: string | null
+        }
+        Relationships: []
       }
       staff_salaries: {
         Row: {
@@ -6428,6 +7147,138 @@ export type Database = {
           name?: string
         }
         Relationships: []
+      }
+      student_absence_alert_history: {
+        Row: {
+          actor_id: string | null
+          alert_id: string | null
+          consecutive_days: number | null
+          created_at: string
+          event_type: string
+          id: string
+          metadata: Json | null
+          note: string | null
+          organization_id: string
+          student_id: string
+        }
+        Insert: {
+          actor_id?: string | null
+          alert_id?: string | null
+          consecutive_days?: number | null
+          created_at?: string
+          event_type: string
+          id?: string
+          metadata?: Json | null
+          note?: string | null
+          organization_id: string
+          student_id: string
+        }
+        Update: {
+          actor_id?: string | null
+          alert_id?: string | null
+          consecutive_days?: number | null
+          created_at?: string
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          note?: string | null
+          organization_id?: string
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_absence_alert_history_alert_id_fkey"
+            columns: ["alert_id"]
+            isOneToOne: false
+            referencedRelation: "student_absence_alerts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_absence_alert_history_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_absence_alerts: {
+        Row: {
+          class_name: string | null
+          consecutive_absent_days: number
+          created_at: string
+          first_absent_date: string | null
+          id: string
+          last_absent_date: string | null
+          last_follow_up_at: string | null
+          last_follow_up_note: string | null
+          last_whatsapp_sent_at: string | null
+          last_whatsapp_threshold: number | null
+          organization_id: string
+          parent_phone: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          section_name: string | null
+          status: string
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          class_name?: string | null
+          consecutive_absent_days?: number
+          created_at?: string
+          first_absent_date?: string | null
+          id?: string
+          last_absent_date?: string | null
+          last_follow_up_at?: string | null
+          last_follow_up_note?: string | null
+          last_whatsapp_sent_at?: string | null
+          last_whatsapp_threshold?: number | null
+          organization_id: string
+          parent_phone?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          section_name?: string | null
+          status?: string
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          class_name?: string | null
+          consecutive_absent_days?: number
+          created_at?: string
+          first_absent_date?: string | null
+          id?: string
+          last_absent_date?: string | null
+          last_follow_up_at?: string | null
+          last_follow_up_note?: string | null
+          last_whatsapp_sent_at?: string | null
+          last_whatsapp_threshold?: number | null
+          organization_id?: string
+          parent_phone?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          section_name?: string | null
+          status?: string
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_absence_alerts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_absence_alerts_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students_or_clients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       student_academic_history: {
         Row: {
@@ -7737,6 +8588,44 @@ export type Database = {
           },
         ]
       }
+      timetable_custom_overrides: {
+        Row: {
+          class_name: string
+          created_at: string
+          created_by: string | null
+          id: string
+          organization_id: string
+          section_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          class_name: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          organization_id: string
+          section_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          class_name?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          organization_id?: string
+          section_name?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "timetable_custom_overrides_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       timetable_time_slots: {
         Row: {
           class_name: string | null
@@ -8352,11 +9241,27 @@ export type Database = {
         Args: { p_cutoff_date?: string; p_dob: string }
         Returns: Json
       }
+      can_apply_leave: {
+        Args: {
+          _end: string
+          _exclude_leave_id?: string
+          _org: string
+          _skip_monthly?: boolean
+          _start: string
+          _user: string
+        }
+        Returns: Json
+      }
       cleanup_all_data: { Args: never; Returns: undefined }
       cleanup_old_archives: { Args: never; Returns: undefined }
       compute_student_fee_status: {
         Args: { p_academic_year?: string; p_student_id: string }
         Returns: Json
+      }
+      conversation_org: { Args: { _conv_id: string }; Returns: string }
+      count_working_days: {
+        Args: { _end: string; _org: string; _start: string }
+        Returns: number
       }
       create_default_roles: {
         Args: {
@@ -8396,6 +9301,10 @@ export type Database = {
         Args: { p_class: string; p_org_id: string; p_section: string }
         Returns: string
       }
+      get_blocked_months: {
+        Args: { _org: string; _year: number }
+        Returns: number[]
+      }
       get_class_subjects: {
         Args: { p_class_section_id: string; p_org_id: string }
         Returns: {
@@ -8431,6 +9340,17 @@ export type Database = {
           student_id: string
           student_name: string
           total_fee: number
+        }[]
+      }
+      get_leave_summary: {
+        Args: { _month: number; _user_id: string; _year: number }
+        Returns: {
+          by_type: Json
+          half_days: number
+          lop_days: number
+          paid_days: number
+          total_leaves: number
+          unpaid_days: number
         }[]
       }
       get_masked_aadhaar: { Args: { p_last_four: string }; Returns: string }
@@ -8491,6 +9411,18 @@ export type Database = {
           term_pending: number
         }[]
       }
+      get_unpaid_leave_usage_ay: {
+        Args: {
+          _ay_end: string
+          _ay_start: string
+          _org_id: string
+          _user_id: string
+        }
+        Returns: {
+          limit_days: number
+          used_days: number
+        }[]
+      }
       get_user_id_by_email: { Args: { _email: string }; Returns: string }
       get_user_organization: { Args: { _user_id: string }; Returns: string }
       get_user_permissions: { Args: { _user_id: string }; Returns: Json }
@@ -8513,6 +9445,10 @@ export type Database = {
           _section: string
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_conversation_participant: {
+        Args: { _conv_id: string; _user_id: string }
         Returns: boolean
       }
       is_feature_enabled: {
@@ -8546,6 +9482,7 @@ export type Database = {
         Returns: string
       }
       map_enum_to_role_name: { Args: { role_enum: string }; Returns: string }
+      map_planner_holiday_type: { Args: { _category: string }; Returns: string }
       materialize_override_term_items: {
         Args: { p_override_id: string }
         Returns: Json
@@ -8577,6 +9514,7 @@ export type Database = {
         Args: { p_payment_id: string }
         Returns: Json
       }
+      seed_default_leave_types: { Args: { _org: string }; Returns: undefined }
       soft_delete_lead: { Args: { lead_id: string }; Returns: undefined }
       sync_class_sections_from_existing_data: {
         Args: never
