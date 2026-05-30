@@ -7215,7 +7215,6 @@ export type Database = {
           last_whatsapp_sent_at: string | null
           last_whatsapp_threshold: number | null
           organization_id: string
-          parent_phone: string | null
           resolved_at: string | null
           resolved_by: string | null
           section_name: string | null
@@ -7235,7 +7234,6 @@ export type Database = {
           last_whatsapp_sent_at?: string | null
           last_whatsapp_threshold?: number | null
           organization_id: string
-          parent_phone?: string | null
           resolved_at?: string | null
           resolved_by?: string | null
           section_name?: string | null
@@ -7255,7 +7253,6 @@ export type Database = {
           last_whatsapp_sent_at?: string | null
           last_whatsapp_threshold?: number | null
           organization_id?: string
-          parent_phone?: string | null
           resolved_at?: string | null
           resolved_by?: string | null
           section_name?: string | null
