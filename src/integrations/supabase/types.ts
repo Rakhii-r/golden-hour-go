@@ -3496,6 +3496,131 @@ export type Database = {
           },
         ]
       }
+      exam_absence_alert_history: {
+        Row: {
+          actor_id: string | null
+          alert_id: string
+          created_at: string
+          event_type: string
+          id: string
+          metadata: Json | null
+          note: string | null
+          organization_id: string
+          student_id: string | null
+        }
+        Insert: {
+          actor_id?: string | null
+          alert_id: string
+          created_at?: string
+          event_type: string
+          id?: string
+          metadata?: Json | null
+          note?: string | null
+          organization_id: string
+          student_id?: string | null
+        }
+        Update: {
+          actor_id?: string | null
+          alert_id?: string
+          created_at?: string
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          note?: string | null
+          organization_id?: string
+          student_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exam_absence_alert_history_alert_id_fkey"
+            columns: ["alert_id"]
+            isOneToOne: false
+            referencedRelation: "exam_absence_alerts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      exam_absence_alerts: {
+        Row: {
+          academic_year: string | null
+          class_name: string | null
+          created_at: string
+          exam_date: string
+          exam_name: string | null
+          exam_type_id: string | null
+          follow_up_at: string | null
+          follow_up_note: string | null
+          id: string
+          marked_at: string
+          marked_by: string | null
+          marks_entry_id: string
+          notification_channel: string | null
+          organization_id: string
+          parent_notified_at: string | null
+          reason: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          section: string | null
+          status: string
+          student_id: string
+          subject: string
+          updated_at: string
+          whatsapp_message_sid: string | null
+        }
+        Insert: {
+          academic_year?: string | null
+          class_name?: string | null
+          created_at?: string
+          exam_date?: string
+          exam_name?: string | null
+          exam_type_id?: string | null
+          follow_up_at?: string | null
+          follow_up_note?: string | null
+          id?: string
+          marked_at?: string
+          marked_by?: string | null
+          marks_entry_id: string
+          notification_channel?: string | null
+          organization_id: string
+          parent_notified_at?: string | null
+          reason?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          section?: string | null
+          status?: string
+          student_id: string
+          subject: string
+          updated_at?: string
+          whatsapp_message_sid?: string | null
+        }
+        Update: {
+          academic_year?: string | null
+          class_name?: string | null
+          created_at?: string
+          exam_date?: string
+          exam_name?: string | null
+          exam_type_id?: string | null
+          follow_up_at?: string | null
+          follow_up_note?: string | null
+          id?: string
+          marked_at?: string
+          marked_by?: string | null
+          marks_entry_id?: string
+          notification_channel?: string | null
+          organization_id?: string
+          parent_notified_at?: string | null
+          reason?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          section?: string | null
+          status?: string
+          student_id?: string
+          subject?: string
+          updated_at?: string
+          whatsapp_message_sid?: string | null
+        }
+        Relationships: []
+      }
       exam_patterns: {
         Row: {
           applicable_classes: string[] | null
