@@ -242,7 +242,187 @@ Deno.serve(async (req) => {
         .eq("id", order.installment_id);
     }
 
-    return json({ success: true });
+    // ── Receipt + notification side-effects (best-effort; never fail payment) ──
+    const primaryReceipt =
+      allocations.length > 0
+        ? `${receiptPrefix}-${razorpay_payment_id.slice(-10)}-1`
+        : `${receiptPrefix}-${razorpay_payment_id.slice(-10)}`;
+    try {
+      const { data: stu } = await supabase
+        .from("students_or_clients")
+        .select("id, name, admission_number, class, section")
+        .eq("id", order.student_id)
+        .maybeSingle();
+      const studentName = (stu as { name?: string } | null)?.name ?? "Student";
+      const studentClass = (stu as { class?: string } | null)?.class ?? "";
+      const studentSection = (stu as { section?: string } | null)?.section ?? "";
+      const classLabel = [studentClass, studentSection].filter(Boolean).join(" - ");
+
+      const { data: insertedPay } = await supabase
+        .from("fee_payments")
+        .select("id, receipt_number")
+        .eq("transaction_id", razorpay_payment_id)
+        .eq("student_id", order.student_id)
+        .order("created_at", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      const feePaymentId = (insertedPay as { id?: string } | null)?.id ?? null;
+      const receiptNo =
+        (insertedPay as { receipt_number?: string } | null)?.receipt_number ?? primaryReceipt;
+
+      const amountStr = `₹${payAmount.toLocaleString("en-IN")}`;
+      const parentActionUrl = `/parent/fees?receipt=${encodeURIComponent(receiptNo)}`;
+      const staffActionUrl = feePaymentId ? `/admin/fees/payments/${feePaymentId}` : `/admin/fees`;
+
+      const recipientRows: Array<{
+        user_id: string;
+        title: string;
+        message: string;
+        type: string;
+        action_url: string;
+      }> = [];
+
+      // Parent
+      recipientRows.push({
+        user_id: userId,
+        title: "Fee Payment Successful",
+        message: `Student: ${studentName}\nAmount: ${amountStr}\nReceipt No: ${receiptNo}\n\nYour payment has been received successfully.`,
+        type: "fee_payment",
+        action_url: parentActionUrl,
+      });
+
+      // Admin + Accountant
+      const { data: staffRoles } = await supabase
+        .from("user_roles")
+        .select("user_id, role")
+        .eq("organization_id", order.organization_id)
+        .in("role", ["admin", "accountant"]);
+      const adminIds = new Set<string>();
+      const accountantIds = new Set<string>();
+      for (const r of (staffRoles ?? []) as Array<{ user_id: string; role: string }>) {
+        if (r.role === "admin") adminIds.add(r.user_id);
+        if (r.role === "accountant") accountantIds.add(r.user_id);
+      }
+      for (const uid of adminIds) {
+        recipientRows.push({
+          user_id: uid,
+          title: "New Fee Payment Received",
+          message: `Student: ${studentName}\nClass: ${classLabel || "—"}\nAmount: ${amountStr}\nReceipt No: ${receiptNo}`,
+          type: "fee_payment",
+          action_url: staffActionUrl,
+        });
+      }
+      for (const uid of accountantIds) {
+        recipientRows.push({
+          user_id: uid,
+          title: "Online Fee Payment Received",
+          message: `Student: ${studentName}\nAmount: ${amountStr}\nReceipt No: ${receiptNo}`,
+          type: "fee_payment",
+          action_url: staffActionUrl,
+        });
+      }
+
+      // Optional: class teacher
+      const { data: orgSettings } = await supabase
+        .from("organization_settings")
+        .select("notify_class_teacher_on_payment")
+        .eq("organization_id", order.organization_id)
+        .maybeSingle();
+      if (
+        (orgSettings as { notify_class_teacher_on_payment?: boolean } | null)
+          ?.notify_class_teacher_on_payment &&
+        studentClass &&
+        studentSection
+      ) {
+        const { data: ct } = await supabase
+          .from("class_teachers")
+          .select("teacher_id")
+          .eq("organization_id", order.organization_id)
+          .eq("class_name", studentClass)
+          .eq("section_name", studentSection)
+          .limit(1)
+          .maybeSingle();
+        const teacherId = (ct as { teacher_id?: string } | null)?.teacher_id;
+        if (teacherId) {
+          recipientRows.push({
+            user_id: teacherId,
+            title: "Fee Payment Completed",
+            message: `Fee payment completed for student ${studentName}.`,
+            type: "fee_payment",
+            action_url: staffActionUrl,
+          });
+        }
+      }
+
+      if (recipientRows.length > 0) {
+        await supabase.from("notifications").insert(
+          recipientRows.map((r) => ({
+            user_id: r.user_id,
+            organization_id: order.organization_id,
+            title: r.title,
+            message: r.message,
+            type: r.type,
+            action_url: r.action_url,
+            metadata: {
+              receipt_number: receiptNo,
+              fee_payment_id: feePaymentId,
+              razorpay_payment_id,
+              amount: payAmount,
+            },
+          })),
+        );
+      }
+
+      await supabase.from("fee_notifications").insert({
+        organization_id: order.organization_id,
+        student_id: order.student_id,
+        installment_id: order.installment_id,
+        notification_type: "payment_success",
+        channel: "in_app",
+        delivery_status: "sent",
+        sent_to: userId,
+        message_body: `Receipt ${receiptNo} · ${amountStr}`,
+      });
+
+      const outboxRows = ["email", "sms", "whatsapp"].map((ch) => ({
+        organization_id: order.organization_id,
+        recipient_user_id: userId,
+        event_type: `fee_payment_success.${ch}`,
+        title: "Fee Payment Successful",
+        body: `Student: ${studentName}\nAmount: ${amountStr}\nReceipt No: ${receiptNo}`,
+        status: "queued",
+        data: {
+          channel: ch,
+          receipt_number: receiptNo,
+          fee_payment_id: feePaymentId,
+          razorpay_payment_id,
+          student_id: order.student_id,
+        },
+      }));
+      await supabase.from("notification_outbox").insert(outboxRows);
+
+      await supabase.from("fee_payment_audit_logs").insert({
+        event: "FEE_PAYMENT_SUCCESS",
+        organization_id: order.organization_id,
+        student_id: order.student_id,
+        parent_user_id: userId,
+        fee_payment_id: feePaymentId,
+        receipt_number: receiptNo,
+        razorpay_payment_id,
+        amount: payAmount,
+        details: {
+          installment_id: order.installment_id,
+          term_number: term?.term_number ?? null,
+          billing_type: billingType,
+          allocations_count: allocations.length,
+          recipients_notified: recipientRows.length,
+        },
+      });
+    } catch (sideErr) {
+      console.error("verify-payment side-effects failed", sideErr);
+    }
+
+    return json({ success: true, receipt_number: primaryReceipt });
   } catch (e) {
     console.error("verify-payment error", e);
     return json({ error: "Unable to verify payment. Please contact support." }, 500);
