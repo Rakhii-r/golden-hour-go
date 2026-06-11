@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Wallet,
   CreditCard,
@@ -9,6 +9,10 @@ import {
   ReceiptText,
   LayoutList,
   CalendarDays,
+  Eye,
+  Download,
+  Printer,
+  FileText,
 } from "lucide-react";
 import { RequireParentAuth } from "@/components/parent/RequireParentAuth";
 import { ParentLayout } from "@/components/parent/ParentLayout";
@@ -16,6 +20,9 @@ import { ParentDashboardProvider, useParentDashboardCtx } from "@/hooks/parent-d
 import { Skeleton } from "@/components/ui/skeleton";
 import { parentSupabase, PARENT_SUPABASE_PUBLISHABLE_KEY, PARENT_SUPABASE_URL } from "@/lib/parent-supabase";
 import { toast } from "sonner";
+import { FeeReceiptDialog } from "@/components/parent/FeeReceiptDialog";
+import type { FeeReceiptData } from "@/components/parent/FeeReceipt";
+
 
 // ─── Razorpay (unchanged) ───────────────────────────────────────────────────
 
@@ -49,7 +56,9 @@ interface RazorpayOrderResponse {
 interface VerifyPaymentResponse {
   success: boolean;
   duplicate?: boolean;
+  receipt_number?: string;
 }
+
 
 async function invokeParentFunction<T>(name: string, body: Record<string, unknown>): Promise<T> {
   const { data: sessionData } = await parentSupabase.auth.getSession();
@@ -307,7 +316,7 @@ function SummaryCard({
 
 // ─── Main page ───────────────────────────────────────────────────────────────
 
-type Tab = "details" | "structure" | "transactions";
+type Tab = "details" | "structure" | "transactions" | "receipts";
 type StructureView = "default" | "duedate";
 type Section = "school" | "daycare";
 
@@ -327,6 +336,32 @@ function FeesPage() {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   // Per-term selected item ids (student_fee_term_items.id)
   const [selectedItems, setSelectedItems] = useState<Record<string, Set<string>>>({});
+  const [receiptOpen, setReceiptOpen] = useState(false);
+  const [receiptData, setReceiptData] = useState<FeeReceiptData | null>(null);
+
+  const openReceipt = (p: FeePayment) => {
+    if (!student || !organization) return;
+    setReceiptData({
+      receipt_number: p.receipt_number ?? "—",
+      transaction_id: p.transaction_id,
+      payment_date: p.payment_date,
+      amount: Number(p.amount ?? 0),
+      payment_mode: p.payment_mode,
+      fee_head_name: p.fee_head_name ?? null,
+      term_number: p.term_number ?? null,
+      academic_year: null,
+      student_name: student.name ?? "Student",
+      admission_number: student.admission_number ?? null,
+      class_label: student.class
+        ? `${student.class}${student.section ? " - " + student.section : ""}`
+        : null,
+      parent_name: null,
+      school_name: organization.name ?? "School",
+      school_logo_url: organization.logo_url ?? null,
+    });
+    setReceiptOpen(true);
+  };
+
 
   const toggleItemSelection = (parentTermId: string, itemId: string) =>
     setSelectedItems((prev) => {
@@ -625,13 +660,35 @@ function FeesPage() {
             });
             if (!vData.success) throw new Error("Verification failed");
             toast.success("Payment successful");
-            // Clear selection for this term
             setSelectedItems((prev) => {
               const next = { ...prev };
               delete next[parentTermId];
               return next;
             });
             await reloadAll();
+            // Auto-show the receipt for the just-paid transaction
+            if (vData.receipt_number && student && organization) {
+              setReceiptData({
+                receipt_number: vData.receipt_number,
+                transaction_id: response.razorpay_payment_id,
+                payment_date: new Date().toISOString().slice(0, 10),
+                amount,
+                payment_mode: "razorpay",
+                fee_head_name: descriptor,
+                term_number: null,
+                academic_year: null,
+                student_name: student.name ?? "Student",
+                admission_number: student.admission_number ?? null,
+                class_label: student.class
+                  ? `${student.class}${student.section ? " - " + student.section : ""}`
+                  : null,
+                parent_name: null,
+                school_name: organization.name ?? "School",
+                school_logo_url: organization.logo_url ?? null,
+              });
+              setReceiptOpen(true);
+            }
+
           } catch (e) {
             toast.error(e instanceof Error ? e.message : "Payment verification failed");
           } finally {
@@ -671,7 +728,15 @@ function FeesPage() {
     { key: "details", label: "Fee Details", icon: <Wallet className="h-4 w-4" /> },
     { key: "structure", label: "Fee Structure", icon: <LayoutList className="h-4 w-4" /> },
     { key: "transactions", label: "Recent Transactions", icon: <ReceiptText className="h-4 w-4" /> },
+    { key: "receipts", label: "Receipts", icon: <FileText className="h-4 w-4" /> },
   ];
+
+  // Receipts: completed payments with a receipt number
+  const receiptRows = useMemo(
+    () => payments.filter((p) => !!p.receipt_number),
+    [payments],
+  );
+
 
   return (
     <div className="space-y-5">
@@ -1148,6 +1213,7 @@ function FeesPage() {
                       <th className="pb-2 pr-4">Txn ID</th>
                       <th className="pb-2 pr-4 text-right">Amount</th>
                       <th className="pb-2 pr-4">Status</th>
+                      <th className="pb-2 pr-4 text-right">Action</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1169,6 +1235,93 @@ function FeesPage() {
                         <td className="py-2.5 pr-4">
                           <StatusBadge status={p.status} />
                         </td>
+                        <td className="py-2.5 pr-4 text-right">
+                          {p.receipt_number ? (
+                            <button
+                              onClick={() => openReceipt(p)}
+                              className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-xs hover:bg-muted"
+                            >
+                              <Eye className="h-3.5 w-3.5" />
+                              View
+                            </button>
+                          ) : (
+                            <span className="text-xs parent-muted">—</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Tab: Receipts ── */}
+        {activeTab === "receipts" && (
+          <div className="p-5">
+            {pageLoading ? (
+              <Skeleton className="h-32 w-full" />
+            ) : receiptRows.length === 0 ? (
+              <div className="py-8 text-center">
+                <FileText className="mx-auto mb-3 h-8 w-8 parent-muted opacity-40" />
+                <p className="text-sm parent-muted">No receipts yet.</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-xs parent-muted">
+                      <th className="pb-2 pr-4">Receipt No</th>
+                      <th className="pb-2 pr-4">Date</th>
+                      <th className="pb-2 pr-4 text-right">Amount</th>
+                      <th className="pb-2 pr-4">Term</th>
+                      <th className="pb-2 pr-4">Status</th>
+                      <th className="pb-2 pr-4 text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {receiptRows.map((p) => (
+                      <tr key={p.id} className="border-t border-border">
+                        <td className="py-2.5 pr-4 font-mono text-xs">{p.receipt_number}</td>
+                        <td className="py-2.5 pr-4 whitespace-nowrap">{fmtDate(p.payment_date)}</td>
+                        <td className="py-2.5 pr-4 text-right font-medium">
+                          {fmt(Number(p.amount ?? 0))}
+                        </td>
+                        <td className="py-2.5 pr-4 whitespace-nowrap">
+                          {p.term_number ? `Term ${p.term_number}` : "—"}
+                        </td>
+                        <td className="py-2.5 pr-4">
+                          <StatusBadge status={p.status} />
+                        </td>
+                        <td className="py-2.5 pr-4 text-right">
+                          <div className="inline-flex items-center gap-1">
+                            <button
+                              onClick={() => openReceipt(p)}
+                              className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-xs hover:bg-muted"
+                              title="View"
+                            >
+                              <Eye className="h-3.5 w-3.5" />
+                              View
+                            </button>
+                            <button
+                              onClick={() => openReceipt(p)}
+                              className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-xs hover:bg-muted"
+                              title="Download PDF"
+                            >
+                              <Download className="h-3.5 w-3.5" />
+                              PDF
+                            </button>
+                            <button
+                              onClick={() => openReceipt(p)}
+                              className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-xs hover:bg-muted"
+                              title="Print"
+                            >
+                              <Printer className="h-3.5 w-3.5" />
+                              Print
+                            </button>
+                          </div>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -1178,6 +1331,9 @@ function FeesPage() {
           </div>
         )}
       </div>
+
+      <FeeReceiptDialog open={receiptOpen} onOpenChange={setReceiptOpen} data={receiptData} />
     </div>
   );
 }
+
