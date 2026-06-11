@@ -2554,8 +2554,72 @@ export type Database = {
           },
         ]
       }
+      conversation_escalations: {
+        Row: {
+          assigned_admin_id: string | null
+          conversation_id: string
+          created_at: string
+          escalated_at: string
+          escalated_by: string
+          escalated_by_role: string
+          escalation_reason: string
+          id: string
+          organization_id: string
+          resolution_note: string | null
+          resolved_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_admin_id?: string | null
+          conversation_id: string
+          created_at?: string
+          escalated_at?: string
+          escalated_by: string
+          escalated_by_role: string
+          escalation_reason: string
+          id?: string
+          organization_id: string
+          resolution_note?: string | null
+          resolved_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_admin_id?: string | null
+          conversation_id?: string
+          created_at?: string
+          escalated_at?: string
+          escalated_by?: string
+          escalated_by_role?: string
+          escalation_reason?: string
+          id?: string
+          organization_id?: string
+          resolution_note?: string | null
+          resolved_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_escalations_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversation_escalations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversations: {
         Row: {
+          admin_id: string | null
           conversation_type: string
           created_at: string
           id: string
@@ -2566,11 +2630,12 @@ export type Database = {
           parent_id: string
           parent_unread_count: number
           student_id: string
-          teacher_id: string
+          teacher_id: string | null
           teacher_unread_count: number
           updated_at: string
         }
         Insert: {
+          admin_id?: string | null
           conversation_type?: string
           created_at?: string
           id?: string
@@ -2581,11 +2646,12 @@ export type Database = {
           parent_id: string
           parent_unread_count?: number
           student_id: string
-          teacher_id: string
+          teacher_id?: string | null
           teacher_unread_count?: number
           updated_at?: string
         }
         Update: {
+          admin_id?: string | null
           conversation_type?: string
           created_at?: string
           id?: string
@@ -2596,7 +2662,7 @@ export type Database = {
           parent_id?: string
           parent_unread_count?: number
           student_id?: string
-          teacher_id?: string
+          teacher_id?: string | null
           teacher_unread_count?: number
           updated_at?: string
         }
@@ -2784,112 +2850,404 @@ export type Database = {
           },
         ]
       }
-      daycare_config: {
+      daycare_enrollments: {
         Row: {
-          base_monthly_fee: number
           created_at: string
-          duration_overrides: Json
-          month_working_days: Json
+          daycare_student_id: string
+          end_date: string | null
+          id: string
           organization_id: string
+          plan_id: string | null
+          start_date: string
+          status: string
           updated_at: string
         }
         Insert: {
-          base_monthly_fee?: number
           created_at?: string
-          duration_overrides?: Json
-          month_working_days?: Json
+          daycare_student_id: string
+          end_date?: string | null
+          id?: string
           organization_id: string
+          plan_id?: string | null
+          start_date?: string
+          status?: string
           updated_at?: string
         }
         Update: {
-          base_monthly_fee?: number
           created_at?: string
-          duration_overrides?: Json
-          month_working_days?: Json
+          daycare_student_id?: string
+          end_date?: string | null
+          id?: string
           organization_id?: string
+          plan_id?: string | null
+          start_date?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daycare_enrollments_daycare_student_id_fkey"
+            columns: ["daycare_student_id"]
+            isOneToOne: false
+            referencedRelation: "daycare_students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daycare_enrollments_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "daycare_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      daycare_fee_overrides: {
+        Row: {
+          approved_by: string | null
+          created_at: string
+          daycare_student_id: string
+          difference: number | null
+          effective_from: string
+          effective_to: string | null
+          id: string
+          organization_id: string
+          original_amount: number
+          override_amount: number
+          override_type: string
+          plan_id: string | null
+          reason: string | null
+          updated_at: string
+        }
+        Insert: {
+          approved_by?: string | null
+          created_at?: string
+          daycare_student_id: string
+          difference?: number | null
+          effective_from?: string
+          effective_to?: string | null
+          id?: string
+          organization_id: string
+          original_amount?: number
+          override_amount?: number
+          override_type: string
+          plan_id?: string | null
+          reason?: string | null
+          updated_at?: string
+        }
+        Update: {
+          approved_by?: string | null
+          created_at?: string
+          daycare_student_id?: string
+          difference?: number | null
+          effective_from?: string
+          effective_to?: string | null
+          id?: string
+          organization_id?: string
+          original_amount?: number
+          override_amount?: number
+          override_type?: string
+          plan_id?: string | null
+          reason?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daycare_fee_overrides_daycare_student_id_fkey"
+            columns: ["daycare_student_id"]
+            isOneToOne: false
+            referencedRelation: "daycare_students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daycare_fee_overrides_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "daycare_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      daycare_invoices: {
+        Row: {
+          balance_amount: number | null
+          created_at: string
+          daycare_student_id: string
+          due_date: string | null
+          id: string
+          invoice_number: string | null
+          notes: string | null
+          organization_id: string
+          paid_amount: number
+          period_end: string
+          period_start: string
+          plan_id: string | null
+          status: string
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          balance_amount?: number | null
+          created_at?: string
+          daycare_student_id: string
+          due_date?: string | null
+          id?: string
+          invoice_number?: string | null
+          notes?: string | null
+          organization_id: string
+          paid_amount?: number
+          period_end: string
+          period_start: string
+          plan_id?: string | null
+          status?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          balance_amount?: number | null
+          created_at?: string
+          daycare_student_id?: string
+          due_date?: string | null
+          id?: string
+          invoice_number?: string | null
+          notes?: string | null
+          organization_id?: string
+          paid_amount?: number
+          period_end?: string
+          period_start?: string
+          plan_id?: string | null
+          status?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daycare_invoices_daycare_student_id_fkey"
+            columns: ["daycare_student_id"]
+            isOneToOne: false
+            referencedRelation: "daycare_students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daycare_invoices_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "daycare_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      daycare_payments: {
+        Row: {
+          amount: number
+          collected_by: string | null
+          created_at: string
+          daycare_student_id: string
+          id: string
+          invoice_id: string | null
+          notes: string | null
+          organization_id: string
+          paid_on: string
+          payment_mode: string
+          receipt_no: string | null
+          reference_no: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          collected_by?: string | null
+          created_at?: string
+          daycare_student_id: string
+          id?: string
+          invoice_id?: string | null
+          notes?: string | null
+          organization_id: string
+          paid_on?: string
+          payment_mode?: string
+          receipt_no?: string | null
+          reference_no?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          collected_by?: string | null
+          created_at?: string
+          daycare_student_id?: string
+          id?: string
+          invoice_id?: string | null
+          notes?: string | null
+          organization_id?: string
+          paid_on?: string
+          payment_mode?: string
+          receipt_no?: string | null
+          reference_no?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daycare_payments_daycare_student_id_fkey"
+            columns: ["daycare_student_id"]
+            isOneToOne: false
+            referencedRelation: "daycare_students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daycare_payments_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "daycare_invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      daycare_plans: {
+        Row: {
+          created_at: string
+          description: string | null
+          duration_hours: number | null
+          fee_amount: number
+          id: string
+          is_active: boolean
+          name: string
+          organization_id: string
+          plan_type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          duration_hours?: number | null
+          fee_amount?: number
+          id?: string
+          is_active?: boolean
+          name: string
+          organization_id: string
+          plan_type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          duration_hours?: number | null
+          fee_amount?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+          organization_id?: string
+          plan_type?: string
           updated_at?: string
         }
         Relationships: []
       }
-      daycare_monthly_usage: {
+      daycare_settings: {
         Row: {
-          academic_year: string
-          base_annual_fee: number
-          calculated_amount: number
-          concession_amount: number
+          capacity: number
           created_at: string
-          created_by: string | null
-          days_used: number
-          discount_amount: number
-          fee_heads_amount: number
-          final_amount: number
+          daycare_name: string
           id: string
-          month: number
-          notes: string | null
+          notify_on_admission: boolean
+          notify_on_payment: boolean
           organization_id: string
-          per_day_rate: number
-          status: string
-          student_fee_override_id: string | null
-          student_id: string
+          receipt_prefix: string
+          reminder_days_before: number
           updated_at: string
-          working_days: number
-          year: number
+          working_hours_end: string
+          working_hours_start: string
         }
         Insert: {
-          academic_year?: string
-          base_annual_fee?: number
-          calculated_amount?: number
-          concession_amount?: number
+          capacity?: number
           created_at?: string
-          created_by?: string | null
-          days_used?: number
-          discount_amount?: number
-          fee_heads_amount?: number
-          final_amount?: number
+          daycare_name?: string
           id?: string
-          month: number
-          notes?: string | null
+          notify_on_admission?: boolean
+          notify_on_payment?: boolean
           organization_id: string
-          per_day_rate?: number
-          status?: string
-          student_fee_override_id?: string | null
-          student_id: string
+          receipt_prefix?: string
+          reminder_days_before?: number
           updated_at?: string
-          working_days?: number
-          year: number
+          working_hours_end?: string
+          working_hours_start?: string
         }
         Update: {
-          academic_year?: string
-          base_annual_fee?: number
-          calculated_amount?: number
-          concession_amount?: number
+          capacity?: number
           created_at?: string
-          created_by?: string | null
-          days_used?: number
-          discount_amount?: number
-          fee_heads_amount?: number
-          final_amount?: number
+          daycare_name?: string
           id?: string
-          month?: number
-          notes?: string | null
+          notify_on_admission?: boolean
+          notify_on_payment?: boolean
           organization_id?: string
-          per_day_rate?: number
-          status?: string
-          student_fee_override_id?: string | null
-          student_id?: string
+          receipt_prefix?: string
+          reminder_days_before?: number
           updated_at?: string
-          working_days?: number
-          year?: number
+          working_hours_end?: string
+          working_hours_start?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "daycare_monthly_usage_student_fee_override_id_fkey"
-            columns: ["student_fee_override_id"]
-            isOneToOne: false
-            referencedRelation: "student_fee_overrides"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
+      }
+      daycare_students: {
+        Row: {
+          address: string | null
+          admission_number: string | null
+          alt_mobile: string | null
+          child_name: string
+          class: string | null
+          created_at: string
+          dob: string | null
+          emergency_contact: string | null
+          gender: string | null
+          id: string
+          linked_student_id: string | null
+          medical_notes: string | null
+          mobile: string | null
+          organization_id: string
+          parent_name: string | null
+          section: string | null
+          status: string
+          student_type: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          admission_number?: string | null
+          alt_mobile?: string | null
+          child_name: string
+          class?: string | null
+          created_at?: string
+          dob?: string | null
+          emergency_contact?: string | null
+          gender?: string | null
+          id?: string
+          linked_student_id?: string | null
+          medical_notes?: string | null
+          mobile?: string | null
+          organization_id: string
+          parent_name?: string | null
+          section?: string | null
+          status?: string
+          student_type: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          admission_number?: string | null
+          alt_mobile?: string | null
+          child_name?: string
+          class?: string | null
+          created_at?: string
+          dob?: string | null
+          emergency_contact?: string | null
+          gender?: string | null
+          id?: string
+          linked_student_id?: string | null
+          medical_notes?: string | null
+          mobile?: string | null
+          organization_id?: string
+          parent_name?: string | null
+          section?: string | null
+          status?: string
+          student_type?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       default_age_framework: {
         Row: {
@@ -3941,7 +4299,6 @@ export type Database = {
         Row: {
           category: string
           created_at: string
-          daycare_billing_unit: string | null
           deleted_at: string | null
           description: string | null
           display_order: number
@@ -3957,7 +4314,6 @@ export type Database = {
         Insert: {
           category?: string
           created_at?: string
-          daycare_billing_unit?: string | null
           deleted_at?: string | null
           description?: string | null
           display_order?: number
@@ -3973,7 +4329,6 @@ export type Database = {
         Update: {
           category?: string
           created_at?: string
-          daycare_billing_unit?: string | null
           deleted_at?: string | null
           description?: string | null
           display_order?: number
@@ -4063,6 +4418,10 @@ export type Database = {
       fee_payments: {
         Row: {
           academic_year: string
+          allocation_notes: string | null
+          allocation_resolved_at: string | null
+          allocation_resolved_by: string | null
+          allocation_status: string | null
           amount: number
           billing_type: string
           created_at: string
@@ -4098,6 +4457,10 @@ export type Database = {
         }
         Insert: {
           academic_year?: string
+          allocation_notes?: string | null
+          allocation_resolved_at?: string | null
+          allocation_resolved_by?: string | null
+          allocation_status?: string | null
           amount: number
           billing_type?: string
           created_at?: string
@@ -4133,6 +4496,10 @@ export type Database = {
         }
         Update: {
           academic_year?: string
+          allocation_notes?: string | null
+          allocation_resolved_at?: string | null
+          allocation_resolved_by?: string | null
+          allocation_status?: string | null
           amount?: number
           billing_type?: string
           created_at?: string
@@ -4211,7 +4578,6 @@ export type Database = {
           billing_type: string
           class: string
           created_at: string
-          daycare_billing_mode: string | null
           hours_per_day: number | null
           id: string
           monthly_fee: number | null
@@ -4229,7 +4595,6 @@ export type Database = {
           billing_type?: string
           class: string
           created_at?: string
-          daycare_billing_mode?: string | null
           hours_per_day?: number | null
           id?: string
           monthly_fee?: number | null
@@ -4247,7 +4612,6 @@ export type Database = {
           billing_type?: string
           class?: string
           created_at?: string
-          daycare_billing_mode?: string | null
           hours_per_day?: number | null
           id?: string
           monthly_fee?: number | null
@@ -5715,6 +6079,70 @@ export type Database = {
         }
         Relationships: []
       }
+      message_attachments: {
+        Row: {
+          attachment_kind: string
+          conversation_id: string
+          created_at: string
+          file_name: string
+          file_size: number
+          id: string
+          message_id: string
+          mime_type: string
+          organization_id: string
+          storage_path: string
+          uploaded_by: string
+        }
+        Insert: {
+          attachment_kind: string
+          conversation_id: string
+          created_at?: string
+          file_name: string
+          file_size: number
+          id?: string
+          message_id: string
+          mime_type: string
+          organization_id: string
+          storage_path: string
+          uploaded_by: string
+        }
+        Update: {
+          attachment_kind?: string
+          conversation_id?: string
+          created_at?: string
+          file_name?: string
+          file_size?: number
+          id?: string
+          message_id?: string
+          mime_type?: string
+          organization_id?: string
+          storage_path?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_attachments_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_attachments_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_attachments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           attachment_url: string | null
@@ -5723,12 +6151,14 @@ export type Database = {
           id: string
           is_read: boolean
           message: string
+          message_tsv: unknown
           organization_id: string
           read_at: string | null
           receiver_id: string
           receiver_role: string
           sender_id: string
           sender_role: string
+          status: string
           student_id: string | null
           updated_at: string
         }
@@ -5739,12 +6169,14 @@ export type Database = {
           id?: string
           is_read?: boolean
           message: string
+          message_tsv?: unknown
           organization_id: string
           read_at?: string | null
           receiver_id: string
           receiver_role: string
           sender_id: string
           sender_role: string
+          status?: string
           student_id?: string | null
           updated_at?: string
         }
@@ -5755,12 +6187,14 @@ export type Database = {
           id?: string
           is_read?: boolean
           message?: string
+          message_tsv?: unknown
           organization_id?: string
           read_at?: string | null
           receiver_id?: string
           receiver_role?: string
           sender_id?: string
           sender_role?: string
+          status?: string
           student_id?: string | null
           updated_at?: string
         }
@@ -5784,6 +6218,54 @@ export type Database = {
             columns: ["student_id"]
             isOneToOne: false
             referencedRelation: "students_or_clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messaging_read_audit: {
+        Row: {
+          admin_id: string
+          conversation_id: string
+          id: string
+          opened_at: string
+          organization_id: string
+          parent_id: string | null
+          student_id: string | null
+          teacher_id: string | null
+        }
+        Insert: {
+          admin_id: string
+          conversation_id: string
+          id?: string
+          opened_at?: string
+          organization_id: string
+          parent_id?: string | null
+          student_id?: string | null
+          teacher_id?: string | null
+        }
+        Update: {
+          admin_id?: string
+          conversation_id?: string
+          id?: string
+          opened_at?: string
+          organization_id?: string
+          parent_id?: string | null
+          student_id?: string | null
+          teacher_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messaging_read_audit_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messaging_read_audit_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -5822,6 +6304,59 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "messaging_settings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_outbox: {
+        Row: {
+          attempts: number
+          body: string
+          created_at: string
+          data: Json
+          event_type: string
+          id: string
+          last_error: string | null
+          organization_id: string
+          recipient_user_id: string
+          sent_at: string | null
+          status: string
+          title: string
+        }
+        Insert: {
+          attempts?: number
+          body: string
+          created_at?: string
+          data?: Json
+          event_type: string
+          id?: string
+          last_error?: string | null
+          organization_id: string
+          recipient_user_id: string
+          sent_at?: string | null
+          status?: string
+          title: string
+        }
+        Update: {
+          attempts?: number
+          body?: string
+          created_at?: string
+          data?: Json
+          event_type?: string
+          id?: string
+          last_error?: string | null
+          organization_id?: string
+          recipient_user_id?: string
+          sent_at?: string | null
+          status?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_outbox_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
@@ -6639,6 +7174,50 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "promotion_logs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      push_tokens: {
+        Row: {
+          created_at: string
+          device_id: string
+          id: string
+          last_seen_at: string
+          organization_id: string
+          platform: string
+          push_token: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          device_id: string
+          id?: string
+          last_seen_at?: string
+          organization_id: string
+          platform: string
+          push_token: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          device_id?: string
+          id?: string
+          last_seen_at?: string
+          organization_id?: string
+          platform?: string
+          push_token?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_tokens_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
@@ -9374,6 +9953,10 @@ export type Database = {
         }
         Returns: Json
       }
+      can_teacher_message_student: {
+        Args: { _student_id: string; _teacher_id: string }
+        Returns: boolean
+      }
       cleanup_all_data: { Args: never; Returns: undefined }
       cleanup_old_archives: { Args: never; Returns: undefined }
       compute_student_fee_status: {
@@ -9408,7 +9991,17 @@ export type Database = {
             }
             Returns: undefined
           }
-      ensure_daycare_monthly_head: { Args: { _org: string }; Returns: string }
+      enqueue_push_notification: {
+        Args: {
+          _body: string
+          _data: Json
+          _event_type: string
+          _organization_id: string
+          _recipient: string
+          _title: string
+        }
+        Returns: undefined
+      }
       generate_admission_number: { Args: { p_org_id: string }; Returns: string }
       generate_cert_reference_no: {
         Args: { p_employee_id: string; p_org_id: string }
@@ -9609,7 +10202,11 @@ export type Database = {
         Args: { p_override_id: string }
         Returns: Json
       }
-      normalize_class_name: { Args: { _name: string }; Returns: string }
+      normalize_class_name: { Args: { raw: string }; Returns: string }
+      parent_owns_student: {
+        Args: { _student_id: string; _user_id: string }
+        Returns: boolean
+      }
       populate_class_sections_for_org: {
         Args: { p_org_id: string }
         Returns: undefined
@@ -9626,6 +10223,10 @@ export type Database = {
         Args: { p_force?: boolean; p_override_id: string }
         Returns: Json
       }
+      recompute_fee_term_paid: {
+        Args: { _term_id: string }
+        Returns: undefined
+      }
       restore_archived_record: {
         Args: { _module: string; _original_id: string; _restored_by: string }
         Returns: boolean
@@ -9635,6 +10236,32 @@ export type Database = {
       reverse_payment_allocations: {
         Args: { p_payment_id: string }
         Returns: Json
+      }
+      search_conversations: {
+        Args: {
+          _conv_type?: string
+          _from?: string
+          _limit?: number
+          _offset?: number
+          _org: string
+          _query?: string
+          _to?: string
+        }
+        Returns: {
+          admin_id: string
+          conversation_id: string
+          conversation_type: string
+          last_message: string
+          last_message_at: string
+          organization_id: string
+          parent_id: string
+          parent_unread_count: number
+          rank: number
+          snippet: string
+          student_id: string
+          teacher_id: string
+          teacher_unread_count: number
+        }[]
       }
       seed_default_leave_types: { Args: { _org: string }; Returns: undefined }
       soft_delete_lead: { Args: { lead_id: string }; Returns: undefined }
@@ -9669,6 +10296,16 @@ export type Database = {
         Returns: boolean
       }
       today_day_name: { Args: never; Returns: string }
+      validate_message_participants: {
+        Args: {
+          _conversation_id: string
+          _receiver_id: string
+          _receiver_role: string
+          _sender_id: string
+          _sender_role: string
+        }
+        Returns: boolean
+      }
       validate_override_invariant: {
         Args: { p_override_id: string }
         Returns: {
