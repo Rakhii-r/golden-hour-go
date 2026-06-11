@@ -56,7 +56,9 @@ interface RazorpayOrderResponse {
 interface VerifyPaymentResponse {
   success: boolean;
   duplicate?: boolean;
+  receipt_number?: string;
 }
+
 
 async function invokeParentFunction<T>(name: string, body: Record<string, unknown>): Promise<T> {
   const { data: sessionData } = await parentSupabase.auth.getSession();
