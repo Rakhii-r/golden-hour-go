@@ -4415,6 +4415,48 @@ export type Database = {
           },
         ]
       }
+      fee_payment_audit_logs: {
+        Row: {
+          amount: number | null
+          created_at: string
+          details: Json
+          event: string
+          fee_payment_id: string | null
+          id: string
+          organization_id: string
+          parent_user_id: string | null
+          razorpay_payment_id: string | null
+          receipt_number: string | null
+          student_id: string | null
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string
+          details?: Json
+          event: string
+          fee_payment_id?: string | null
+          id?: string
+          organization_id: string
+          parent_user_id?: string | null
+          razorpay_payment_id?: string | null
+          receipt_number?: string | null
+          student_id?: string | null
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string
+          details?: Json
+          event?: string
+          fee_payment_id?: string | null
+          id?: string
+          organization_id?: string
+          parent_user_id?: string | null
+          razorpay_payment_id?: string | null
+          receipt_number?: string | null
+          student_id?: string | null
+        }
+        Relationships: []
+      }
       fee_payments: {
         Row: {
           academic_year: string
@@ -6563,6 +6605,7 @@ export type Database = {
           email: string | null
           id: string
           logo_url: string | null
+          notify_class_teacher_on_payment: boolean
           organization_id: string
           phone: string | null
           place: string | null
@@ -6582,6 +6625,7 @@ export type Database = {
           email?: string | null
           id?: string
           logo_url?: string | null
+          notify_class_teacher_on_payment?: boolean
           organization_id: string
           phone?: string | null
           place?: string | null
@@ -6601,6 +6645,7 @@ export type Database = {
           email?: string | null
           id?: string
           logo_url?: string | null
+          notify_class_teacher_on_payment?: boolean
           organization_id?: string
           phone?: string | null
           place?: string | null
