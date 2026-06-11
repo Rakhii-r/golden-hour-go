@@ -1213,6 +1213,7 @@ function FeesPage() {
                       <th className="pb-2 pr-4">Txn ID</th>
                       <th className="pb-2 pr-4 text-right">Amount</th>
                       <th className="pb-2 pr-4">Status</th>
+                      <th className="pb-2 pr-4 text-right">Action</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1234,6 +1235,93 @@ function FeesPage() {
                         <td className="py-2.5 pr-4">
                           <StatusBadge status={p.status} />
                         </td>
+                        <td className="py-2.5 pr-4 text-right">
+                          {p.receipt_number ? (
+                            <button
+                              onClick={() => openReceipt(p)}
+                              className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-xs hover:bg-muted"
+                            >
+                              <Eye className="h-3.5 w-3.5" />
+                              View
+                            </button>
+                          ) : (
+                            <span className="text-xs parent-muted">—</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Tab: Receipts ── */}
+        {activeTab === "receipts" && (
+          <div className="p-5">
+            {pageLoading ? (
+              <Skeleton className="h-32 w-full" />
+            ) : receiptRows.length === 0 ? (
+              <div className="py-8 text-center">
+                <FileText className="mx-auto mb-3 h-8 w-8 parent-muted opacity-40" />
+                <p className="text-sm parent-muted">No receipts yet.</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-xs parent-muted">
+                      <th className="pb-2 pr-4">Receipt No</th>
+                      <th className="pb-2 pr-4">Date</th>
+                      <th className="pb-2 pr-4 text-right">Amount</th>
+                      <th className="pb-2 pr-4">Term</th>
+                      <th className="pb-2 pr-4">Status</th>
+                      <th className="pb-2 pr-4 text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {receiptRows.map((p) => (
+                      <tr key={p.id} className="border-t border-border">
+                        <td className="py-2.5 pr-4 font-mono text-xs">{p.receipt_number}</td>
+                        <td className="py-2.5 pr-4 whitespace-nowrap">{fmtDate(p.payment_date)}</td>
+                        <td className="py-2.5 pr-4 text-right font-medium">
+                          {fmt(Number(p.amount ?? 0))}
+                        </td>
+                        <td className="py-2.5 pr-4 whitespace-nowrap">
+                          {p.term_number ? `Term ${p.term_number}` : "—"}
+                        </td>
+                        <td className="py-2.5 pr-4">
+                          <StatusBadge status={p.status} />
+                        </td>
+                        <td className="py-2.5 pr-4 text-right">
+                          <div className="inline-flex items-center gap-1">
+                            <button
+                              onClick={() => openReceipt(p)}
+                              className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-xs hover:bg-muted"
+                              title="View"
+                            >
+                              <Eye className="h-3.5 w-3.5" />
+                              View
+                            </button>
+                            <button
+                              onClick={() => openReceipt(p)}
+                              className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-xs hover:bg-muted"
+                              title="Download PDF"
+                            >
+                              <Download className="h-3.5 w-3.5" />
+                              PDF
+                            </button>
+                            <button
+                              onClick={() => openReceipt(p)}
+                              className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-xs hover:bg-muted"
+                              title="Print"
+                            >
+                              <Printer className="h-3.5 w-3.5" />
+                              Print
+                            </button>
+                          </div>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -1243,6 +1331,9 @@ function FeesPage() {
           </div>
         )}
       </div>
+
+      <FeeReceiptDialog open={receiptOpen} onOpenChange={setReceiptOpen} data={receiptData} />
     </div>
   );
 }
+
