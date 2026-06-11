@@ -4,20 +4,6 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/*
- * Design system definition.
- *
- * The @theme inline block maps CSS custom properties to Tailwind utility
- * classes (e.g. --color-primary -> bg-primary, text-primary).
- *
- * The :root and .dark blocks define the actual color values using oklch.
- * All colors MUST use oklch format.
- *
- * To add a new semantic color:
- * 1. Add the variable to :root (light value) and .dark (dark value)
- * 2. Register it in @theme inline as --color-<name>: var(--<name>)
- */
-
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -63,45 +49,44 @@
 
 :root {
   --radius: 0.625rem;
-  /* EduGrow Parent Portal palette
-   * Primary  : Orange #FF6B00  -> actions, highlights, active tabs
-   * Secondary: Deep Blue #1E3A8A -> headings, navbar accents
-   * Accent   : Pink #E11D48    -> active sidebar, alerts
-   * Bg       : #F5F7FB / Cards: #FFFFFF
-   * Text     : #111827 primary / #6B7280 secondary / #9CA3AF disabled
+  /* Parent Portal palette
+   * Primary   : Blue  #155EEF → actions, highlights, active nav
+   * Secondary : Dark  #1E293B → headings
+   * Accent    : Indigo #4F46E5
+   * Background: #F8FAFC / Cards: #FFFFFF / radius 20px
    */
-  --background: oklch(0.978 0.006 250);          /* #F5F7FB */
-  --foreground: oklch(0.21 0.03 264);            /* #111827 */
-  --card: oklch(1 0 0);                          /* #FFFFFF */
+  --background: oklch(0.985 0.004 248);           /* #F8FAFC */
+  --foreground: oklch(0.21 0.03 264);             /* #111827 */
+  --card: oklch(1 0 0);                           /* #FFFFFF */
   --card-foreground: oklch(0.21 0.03 264);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.21 0.03 264);
-  --primary: oklch(0.685 0.205 41);              /* Orange #FF6B00 */
+  --primary: oklch(0.502 0.246 264.5);            /* #155EEF */
   --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.32 0.13 265);             /* Deep Blue #1E3A8A */
+  --secondary: oklch(0.20 0.04 264);              /* #1E293B */
   --secondary-foreground: oklch(1 0 0);
   --muted: oklch(0.96 0.005 250);
-  --muted-foreground: oklch(0.55 0.02 264);      /* #6B7280 */
-  --accent: oklch(0.6 0.22 18);                  /* Pink #E11D48 */
+  --muted-foreground: oklch(0.55 0.02 264);       /* #6B7280 */
+  --accent: oklch(0.483 0.269 275);               /* #4F46E5 */
   --accent-foreground: oklch(1 0 0);
-  --destructive: oklch(0.62 0.22 27);            /* #EF4444 */
+  --destructive: oklch(0.576 0.220 27);           /* #DC2626 */
   --destructive-foreground: oklch(1 0 0);
-  --border: oklch(0.92 0.008 250);
-  --input: oklch(0.92 0.008 250);
-  --ring: oklch(0.685 0.205 41);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.984 0.003 247.858);
+  --border: oklch(0.929 0.006 248);               /* #E2E8F0 */
+  --input: oklch(0.929 0.006 248);
+  --ring: oklch(0.502 0.246 264.5);
+  --chart-1: oklch(0.502 0.246 264.5);            /* Blue  */
+  --chart-2: oklch(0.584 0.168 150.4);            /* Green #16A34A */
+  --chart-3: oklch(0.773 0.164 70.1);             /* Amber #F59E0B */
+  --chart-4: oklch(0.576 0.220 27);               /* Red   #DC2626 */
+  --chart-5: oklch(0.483 0.269 275);              /* Indigo */
+  --sidebar: oklch(1 0 0);
   --sidebar-foreground: oklch(0.21 0.03 264);
-  --sidebar-primary: oklch(0.6 0.22 18);          /* Pink active */
+  --sidebar-primary: oklch(0.502 0.246 264.5);
   --sidebar-primary-foreground: oklch(1 0 0);
   --sidebar-accent: oklch(0.96 0.005 250);
   --sidebar-accent-foreground: oklch(0.21 0.03 264);
-  --sidebar-border: oklch(0.929 0.013 255.508);
-  --sidebar-ring: oklch(0.685 0.205 41);
+  --sidebar-border: oklch(0.929 0.006 248);
+  --sidebar-ring: oklch(0.502 0.246 264.5);
 }
 
 .dark {
@@ -147,33 +132,34 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+    font-family: Inter, sans-serif;
   }
 }
 
-/* ===== EduGrow Parent Portal — Light Professional theme ===== */
+/* ===== Parent Portal — Premium Blue Design System ===== */
 :root {
-  --parent-bg: oklch(0.978 0.006 250);            /* #F5F7FB */
-  --parent-card: oklch(1 0 0);                    /* #FFFFFF */
-  --parent-text: oklch(0.21 0.03 264);            /* #111827 */
-  --parent-muted: oklch(0.55 0.02 264);           /* #6B7280 */
-  --parent-border: oklch(0.92 0.008 250);
-  --parent-shadow: 0 1px 2px oklch(0.21 0.03 264 / 0.04),
-                    0 8px 24px -12px oklch(0.21 0.03 264 / 0.12);
-  --parent-shadow-lg: 0 4px 6px oklch(0.21 0.03 264 / 0.04),
-                       0 16px 40px -12px oklch(0.21 0.03 264 / 0.18);
+  --parent-bg:        #F8FAFC;
+  --parent-card:      #FFFFFF;
+  --parent-text:      #111827;
+  --parent-muted:     #6B7280;
+  --parent-border:    #E2E8F0;
+  --parent-primary:   #155EEF;
+  --parent-shadow:    0 4px 20px rgba(0, 0, 0, 0.06);
+  --parent-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.08);
 }
 
 .parent-portal {
   color: var(--parent-text);
   background-color: var(--parent-bg);
   min-height: 100vh;
+  font-family: Inter, sans-serif;
 }
 
-/* Card surfaces — repurposed from glass classes */
+/* ── Card surface ────────────────────────────────────────────── */
 .glass {
   background: var(--parent-card);
   border: 1px solid var(--parent-border);
-  border-radius: 14px;
+  border-radius: 20px;
   box-shadow: var(--parent-shadow);
   color: var(--parent-text);
 }
@@ -181,48 +167,60 @@
 .glass-strong {
   background: var(--parent-card);
   border: 1px solid var(--parent-border);
-  border-radius: 16px;
+  border-radius: 20px;
   box-shadow: var(--parent-shadow-lg);
   color: var(--parent-text);
 }
 
+/* ── Input ───────────────────────────────────────────────────── */
 .glass-input {
   background: var(--parent-card);
-  border: 1px solid var(--parent-border);
+  border: 1.5px solid var(--parent-border);
   color: var(--parent-text);
-  border-radius: 10px;
-  transition: all 0.18s ease;
+  border-radius: 12px;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
 }
-.glass-input::placeholder { color: oklch(0.7 0.015 264); }
+.glass-input::placeholder { color: #9CA3AF; }
 .glass-input:focus {
   outline: none;
-  border-color: oklch(0.685 0.205 41);
-  background: var(--parent-card);
-  box-shadow: 0 0 0 4px oklch(0.685 0.205 41 / 0.15);
+  border-color: var(--parent-primary);
+  box-shadow: 0 0 0 3px rgba(21, 94, 239, 0.12);
 }
 
-/* Primary action button — Orange */
+/* ── Primary button ──────────────────────────────────────────── */
 .glass-btn {
-  background: oklch(0.685 0.205 41);              /* #FF6B00 */
-  border: 1px solid oklch(0.685 0.205 41);
-  color: oklch(1 0 0);
-  border-radius: 10px;
-  font-weight: 500;
-  transition: transform 0.12s ease, box-shadow 0.18s ease, background 0.18s ease;
-  box-shadow: 0 1px 2px oklch(0.685 0.205 41 / 0.25);
+  background: linear-gradient(135deg, #155EEF, #2563EB);
+  border: none;
+  color: #ffffff;
+  border-radius: 12px;
+  font-weight: 600;
+  transition: transform 0.15s ease, box-shadow 0.2s ease, filter 0.2s ease;
+  box-shadow: 0 4px 12px rgba(21, 94, 239, 0.35);
 }
 .glass-btn:hover {
-  transform: translateY(-1px);
-  background: oklch(0.62 0.21 41);
-  box-shadow: 0 6px 16px -6px oklch(0.685 0.205 41 / 0.5);
+  transform: translateY(-1px) scale(1.01);
+  box-shadow: 0 8px 20px rgba(21, 94, 239, 0.45);
+  filter: brightness(1.06);
 }
-.glass-btn:active { transform: translateY(0) scale(0.98); }
+.glass-btn:active { transform: translateY(0) scale(0.99); }
+.glass-btn:disabled { opacity: 0.6; pointer-events: none; }
 
+/* ── Utilities ───────────────────────────────────────────────── */
 .parent-muted { color: var(--parent-muted); }
 
-/* Sidebar active item — Pink left border accent */
 .parent-sidebar-active {
-  background: oklch(0.6 0.22 18 / 0.08);
-  color: oklch(0.6 0.22 18);
-  border-left: 3px solid oklch(0.6 0.22 18);
+  background: #155EEF;
+  color: #ffffff !important;
+  border-radius: 14px;
+  box-shadow: 0 4px 12px rgba(21, 94, 239, 0.3);
+}
+.parent-sidebar-active svg { color: #ffffff !important; }
+
+.parent-card-hover {
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  cursor: default;
+}
+.parent-card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.1);
 }

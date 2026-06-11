@@ -18,6 +18,7 @@ import { Route as ParentMarksRouteImport } from './routes/parent.marks'
 import { Route as ParentForgotPasswordRouteImport } from './routes/parent.forgot-password'
 import { Route as ParentFeesRouteImport } from './routes/parent.fees'
 import { Route as ParentDashboardRouteImport } from './routes/parent.dashboard'
+import { Route as ParentCommunicationRouteImport } from './routes/parent.communication'
 import { Route as ParentCircularsRouteImport } from './routes/parent.circulars'
 import { Route as ParentChangePasswordRouteImport } from './routes/parent.change-password'
 import { Route as ParentAttendanceRouteImport } from './routes/parent.attendance'
@@ -68,6 +69,11 @@ const ParentDashboardRoute = ParentDashboardRouteImport.update({
   path: '/parent/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ParentCommunicationRoute = ParentCommunicationRouteImport.update({
+  id: '/parent/communication',
+  path: '/parent/communication',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ParentCircularsRoute = ParentCircularsRouteImport.update({
   id: '/parent/circulars',
   path: '/parent/circulars',
@@ -96,6 +102,7 @@ export interface FileRoutesByFullPath {
   '/parent/attendance': typeof ParentAttendanceRoute
   '/parent/change-password': typeof ParentChangePasswordRoute
   '/parent/circulars': typeof ParentCircularsRoute
+  '/parent/communication': typeof ParentCommunicationRoute
   '/parent/dashboard': typeof ParentDashboardRoute
   '/parent/fees': typeof ParentFeesRoute
   '/parent/forgot-password': typeof ParentForgotPasswordRoute
@@ -111,6 +118,7 @@ export interface FileRoutesByTo {
   '/parent/attendance': typeof ParentAttendanceRoute
   '/parent/change-password': typeof ParentChangePasswordRoute
   '/parent/circulars': typeof ParentCircularsRoute
+  '/parent/communication': typeof ParentCommunicationRoute
   '/parent/dashboard': typeof ParentDashboardRoute
   '/parent/fees': typeof ParentFeesRoute
   '/parent/forgot-password': typeof ParentForgotPasswordRoute
@@ -127,6 +135,7 @@ export interface FileRoutesById {
   '/parent/attendance': typeof ParentAttendanceRoute
   '/parent/change-password': typeof ParentChangePasswordRoute
   '/parent/circulars': typeof ParentCircularsRoute
+  '/parent/communication': typeof ParentCommunicationRoute
   '/parent/dashboard': typeof ParentDashboardRoute
   '/parent/fees': typeof ParentFeesRoute
   '/parent/forgot-password': typeof ParentForgotPasswordRoute
@@ -144,6 +153,7 @@ export interface FileRouteTypes {
     | '/parent/attendance'
     | '/parent/change-password'
     | '/parent/circulars'
+    | '/parent/communication'
     | '/parent/dashboard'
     | '/parent/fees'
     | '/parent/forgot-password'
@@ -159,6 +169,7 @@ export interface FileRouteTypes {
     | '/parent/attendance'
     | '/parent/change-password'
     | '/parent/circulars'
+    | '/parent/communication'
     | '/parent/dashboard'
     | '/parent/fees'
     | '/parent/forgot-password'
@@ -174,6 +185,7 @@ export interface FileRouteTypes {
     | '/parent/attendance'
     | '/parent/change-password'
     | '/parent/circulars'
+    | '/parent/communication'
     | '/parent/dashboard'
     | '/parent/fees'
     | '/parent/forgot-password'
@@ -190,6 +202,7 @@ export interface RootRouteChildren {
   ParentAttendanceRoute: typeof ParentAttendanceRoute
   ParentChangePasswordRoute: typeof ParentChangePasswordRoute
   ParentCircularsRoute: typeof ParentCircularsRoute
+  ParentCommunicationRoute: typeof ParentCommunicationRoute
   ParentDashboardRoute: typeof ParentDashboardRoute
   ParentFeesRoute: typeof ParentFeesRoute
   ParentForgotPasswordRoute: typeof ParentForgotPasswordRoute
@@ -264,6 +277,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ParentDashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/parent/communication': {
+      id: '/parent/communication'
+      path: '/parent/communication'
+      fullPath: '/parent/communication'
+      preLoaderRoute: typeof ParentCommunicationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/parent/circulars': {
       id: '/parent/circulars'
       path: '/parent/circulars'
@@ -302,6 +322,7 @@ const rootRouteChildren: RootRouteChildren = {
   ParentAttendanceRoute: ParentAttendanceRoute,
   ParentChangePasswordRoute: ParentChangePasswordRoute,
   ParentCircularsRoute: ParentCircularsRoute,
+  ParentCommunicationRoute: ParentCommunicationRoute,
   ParentDashboardRoute: ParentDashboardRoute,
   ParentFeesRoute: ParentFeesRoute,
   ParentForgotPasswordRoute: ParentForgotPasswordRoute,
