@@ -316,7 +316,7 @@ function SummaryCard({
 
 // ─── Main page ───────────────────────────────────────────────────────────────
 
-type Tab = "details" | "structure" | "transactions";
+type Tab = "details" | "structure" | "transactions" | "receipts";
 type StructureView = "default" | "duedate";
 type Section = "school" | "daycare";
 
