@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Wallet,
   CreditCard,
@@ -9,6 +9,10 @@ import {
   ReceiptText,
   LayoutList,
   CalendarDays,
+  Eye,
+  Download,
+  Printer,
+  FileText,
 } from "lucide-react";
 import { RequireParentAuth } from "@/components/parent/RequireParentAuth";
 import { ParentLayout } from "@/components/parent/ParentLayout";
@@ -16,6 +20,9 @@ import { ParentDashboardProvider, useParentDashboardCtx } from "@/hooks/parent-d
 import { Skeleton } from "@/components/ui/skeleton";
 import { parentSupabase, PARENT_SUPABASE_PUBLISHABLE_KEY, PARENT_SUPABASE_URL } from "@/lib/parent-supabase";
 import { toast } from "sonner";
+import { FeeReceiptDialog } from "@/components/parent/FeeReceiptDialog";
+import type { FeeReceiptData } from "@/components/parent/FeeReceipt";
+
 
 // ─── Razorpay (unchanged) ───────────────────────────────────────────────────
 
