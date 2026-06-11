@@ -336,6 +336,32 @@ function FeesPage() {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   // Per-term selected item ids (student_fee_term_items.id)
   const [selectedItems, setSelectedItems] = useState<Record<string, Set<string>>>({});
+  const [receiptOpen, setReceiptOpen] = useState(false);
+  const [receiptData, setReceiptData] = useState<FeeReceiptData | null>(null);
+
+  const openReceipt = (p: FeePayment) => {
+    if (!student || !organization) return;
+    setReceiptData({
+      receipt_number: p.receipt_number ?? "—",
+      transaction_id: p.transaction_id,
+      payment_date: p.payment_date,
+      amount: Number(p.amount ?? 0),
+      payment_mode: p.payment_mode,
+      fee_head_name: p.fee_head_name ?? null,
+      term_number: p.term_number ?? null,
+      academic_year: null,
+      student_name: student.name ?? "Student",
+      admission_number: student.admission_number ?? null,
+      class_label: student.class
+        ? `${student.class}${student.section ? " - " + student.section : ""}`
+        : null,
+      parent_name: null,
+      school_name: organization.name ?? "School",
+      school_logo_url: organization.logo_url ?? null,
+    });
+    setReceiptOpen(true);
+  };
+
 
   const toggleItemSelection = (parentTermId: string, itemId: string) =>
     setSelectedItems((prev) => {
