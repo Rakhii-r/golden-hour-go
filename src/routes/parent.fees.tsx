@@ -728,7 +728,15 @@ function FeesPage() {
     { key: "details", label: "Fee Details", icon: <Wallet className="h-4 w-4" /> },
     { key: "structure", label: "Fee Structure", icon: <LayoutList className="h-4 w-4" /> },
     { key: "transactions", label: "Recent Transactions", icon: <ReceiptText className="h-4 w-4" /> },
+    { key: "receipts", label: "Receipts", icon: <FileText className="h-4 w-4" /> },
   ];
+
+  // Receipts: completed payments with a receipt number
+  const receiptRows = useMemo(
+    () => payments.filter((p) => !!p.receipt_number),
+    [payments],
+  );
+
 
   return (
     <div className="space-y-5">
