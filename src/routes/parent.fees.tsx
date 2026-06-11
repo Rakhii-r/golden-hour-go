@@ -660,13 +660,35 @@ function FeesPage() {
             });
             if (!vData.success) throw new Error("Verification failed");
             toast.success("Payment successful");
-            // Clear selection for this term
             setSelectedItems((prev) => {
               const next = { ...prev };
               delete next[parentTermId];
               return next;
             });
             await reloadAll();
+            // Auto-show the receipt for the just-paid transaction
+            if (vData.receipt_number && student && organization) {
+              setReceiptData({
+                receipt_number: vData.receipt_number,
+                transaction_id: response.razorpay_payment_id,
+                payment_date: new Date().toISOString().slice(0, 10),
+                amount,
+                payment_mode: "razorpay",
+                fee_head_name: descriptor,
+                term_number: null,
+                academic_year: null,
+                student_name: student.name ?? "Student",
+                admission_number: student.admission_number ?? null,
+                class_label: student.class
+                  ? `${student.class}${student.section ? " - " + student.section : ""}`
+                  : null,
+                parent_name: null,
+                school_name: organization.name ?? "School",
+                school_logo_url: organization.logo_url ?? null,
+              });
+              setReceiptOpen(true);
+            }
+
           } catch (e) {
             toast.error(e instanceof Error ? e.message : "Payment verification failed");
           } finally {
