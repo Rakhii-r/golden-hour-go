@@ -70,6 +70,9 @@ function DocumentsPage() {
   const [downloading, setDownloading] = useState<string | null>(null);
   const [receiptOpen, setReceiptOpen] = useState(false);
   const [receiptData, setReceiptData] = useState<FeeReceiptData | null>(null);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportData, setReportData] = useState<ReportCardData | null>(null);
+  const [reportBundle, setReportBundle] = useState<ReportCardBundle | null>(null);
 
   useEffect(() => {
     if (!studentId || !student?.organization_id) return;
