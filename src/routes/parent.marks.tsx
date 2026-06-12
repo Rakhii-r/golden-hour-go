@@ -30,19 +30,32 @@ export const Route = createFileRoute("/parent/marks")({
 });
 
 function MarksPage() {
-  const { student, organization } = useParentDashboardCtx();
+  const { student, studentId, organizationId, organization } = useParentDashboardCtx();
   const [summaries, setSummaries] = useState<ReportCardSummary[]>([]);
   const [cards, setCards] = useState<Record<string, ReportCardData | null>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!student?.id || !student?.organization_id) return;
+    const effectiveStudentId = studentId ?? student?.id ?? null;
+    const effectiveOrganizationId = organizationId ?? student?.organization_id ?? null;
+    if (!student || !effectiveStudentId || !effectiveOrganizationId) return;
     let cancelled = false;
     (async () => {
       setLoading(true);
+      console.info("[parent-marks:audit] loading report cards", {
+        effectiveStudentId,
+        dashboardStudentId: studentId,
+        studentRecordId: student?.id ?? null,
+        effectiveOrganizationId,
+        studentOrganizationId: student?.organization_id ?? null,
+        admissionNumber: student?.admission_number ?? null,
+        class: student?.class ?? null,
+        section: student?.section ?? null,
+        academicYear: student?.academic_year ?? null,
+      });
       const bundle = await loadReportCards({
-        studentId: student.id,
-        organizationId: student.organization_id,
+        studentId: effectiveStudentId,
+        organizationId: effectiveOrganizationId,
         student: {
           name: student.name ?? "Student",
           admission_number: student.admission_number ?? null,
@@ -60,11 +73,18 @@ function MarksPage() {
       setSummaries(bundle.summaries);
       const built: Record<string, ReportCardData | null> = {};
       for (const s of bundle.summaries) built[s.exam_type_id] = bundle.build(s.exam_type_id);
+      console.info("[parent-marks:audit] transformed stats", {
+        returnedSummaries: bundle.summaries.length,
+        builtCards: Object.values(built).filter(Boolean).length,
+        totalObtained: bundle.summaries.reduce((a, s) => a + s.total_obtained, 0),
+        totalMax: bundle.summaries.reduce((a, s) => a + s.total_max, 0),
+        subjectsRecorded: new Set(Object.values(built).flatMap((c) => c?.subjects.map((m) => m.subject) ?? [])).size,
+      });
       setCards(built);
       setLoading(false);
     })();
     return () => { cancelled = true; };
-  }, [student?.id, student?.organization_id, organization?.name, organization?.logo_url]);
+  }, [studentId, organizationId, student?.id, student?.organization_id, organization?.name, organization?.logo_url]);
 
   const allSubjects = Object.values(cards).flatMap((c) => c?.subjects ?? []);
   const totalObt = summaries.reduce((a, s) => a + s.total_obtained, 0);
