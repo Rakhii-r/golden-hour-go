@@ -414,6 +414,8 @@ function FeesPage() {
       .from("student_fee_overrides")
       .select("id, billing_type")
       .eq("student_id", studentId)
+      .is("archived_at", null)
+      .neq("status", "cancelled")
       .order("created_at", { ascending: false });
     if (section === "daycare") {
       overrideQuery = overrideQuery.eq("billing_type", "daycare");
