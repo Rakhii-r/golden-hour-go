@@ -32,6 +32,7 @@ const NAV = [
   { to: "/parent/assignments",  label: "Assignments",   icon: ClipboardList   },
   { to: "/parent/communication",label: "Communication", icon: MessageSquare   },
   { to: "/parent/circulars",    label: "Circulars",     icon: Megaphone       },
+  { to: "/parent/documents",    label: "Documents",     icon: FolderOpen      },
   { to: "/parent/profile",      label: "Profile",       icon: User            },
 ] as const;
 
