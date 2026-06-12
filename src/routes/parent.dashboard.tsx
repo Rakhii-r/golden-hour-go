@@ -65,6 +65,14 @@ const fmtDate = (s: string | null) => {
   }
 };
 
+const formatClassSection = (studentClass?: string | null, section?: string | null) => {
+  if (!studentClass) return "";
+  const classLabel = /^class\s+/i.test(studentClass.trim())
+    ? studentClass.trim()
+    : `Class ${studentClass.trim()}`;
+  return section?.trim() ? `${classLabel} - ${section.trim()}` : classLabel;
+};
+
 /* ── Welcome Banner ───────────────────────────────────────────── */
 function WelcomeBanner({
   parentName,
@@ -79,6 +87,8 @@ function WelcomeBanner({
   section?: string | null;
   admissionNumber?: string | null;
 }) {
+  const classSection = formatClassSection(studentClass, section);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -105,9 +115,7 @@ function WelcomeBanner({
           <p className="text-sm text-blue-100">
             Viewing{" "}
             <span className="font-semibold text-white">{studentName}</span>
-            {studentClass
-              ? ` — Class ${studentClass}${section ? ` • ${section}` : ""}`
-              : ""}
+            {classSection ? ` — ${classSection}` : ""}
             {admissionNumber ? ` • Adm. ${admissionNumber}` : ""}
           </p>
         </div>
