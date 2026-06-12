@@ -303,7 +303,9 @@ function DocumentsPage() {
   };
 
   const counts = useMemo(() => {
-    const c = { all: rows.length, fee_receipt: 0, student_document: 0, circular_attachment: 0 };
+    const c: Record<DocCategory | "all", number> = {
+      all: rows.length, fee_receipt: 0, report_card: 0, student_document: 0, circular_attachment: 0,
+    };
     for (const r of rows) c[r.category]++;
     return c;
   }, [rows]);
