@@ -421,6 +421,7 @@ function DocumentsPage() {
       </Card>
 
       <FeeReceiptDialog open={receiptOpen} onOpenChange={setReceiptOpen} data={receiptData} />
+      <ReportCardDialog open={reportOpen} onOpenChange={setReportOpen} data={reportData} />
     </div>
   );
 }
