@@ -78,7 +78,7 @@ export async function loadReportCards(args: {
       .select("id, name, academic_year, display_order")
       .eq("organization_id", organizationId),
     parentSupabase
-      .from("grade_rules")
+      .from("grade_scales")
       .select("grade, min_percentage, max_percentage")
       .eq("organization_id", organizationId)
       .eq("is_active", true)
@@ -93,8 +93,8 @@ export async function loadReportCards(args: {
       marksError: marksRes.error?.message ?? null,
       examTypesRows: examTypesRes.data?.length ?? 0,
       examTypesError: examTypesRes.error?.message ?? null,
-      gradeRulesRows: gradesRes.data?.length ?? 0,
-      gradeRulesError: gradesRes.error?.message ?? null,
+      gradeScalesRows: gradesRes.data?.length ?? 0,
+      gradeScalesError: gradesRes.error?.message ?? null,
     });
   }
 

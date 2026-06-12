@@ -167,7 +167,9 @@ function MarksPage() {
                           </td>
                           <td className="py-2 pr-3">{pct != null ? `${pct}%` : "—"}</td>
                           <td className="py-2 pr-3">{m.grade ?? "—"}</td>
-                          <td className="py-2 pr-3 text-xs parent-muted">{m.remarks ?? "—"}</td>
+                          <td className="py-2 pr-3 text-xs parent-muted">
+                            {m.remarks?.trim() || "No Remarks"}
+                          </td>
                         </tr>
                       );
                     })}
