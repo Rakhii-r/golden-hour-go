@@ -37,7 +37,7 @@ const NAV = [
 ] as const;
 
 // Mobile shows Overview, Attendance, Communication, Fees, Profile
-const MOBILE_NAV_INDICES = [0, 2, 6, 3, 8] as const;
+const MOBILE_NAV_INDICES = [0, 2, 6, 3, 9] as const;
 
 function getInitials(name: string | null | undefined): string {
   if (!name) return "P";
