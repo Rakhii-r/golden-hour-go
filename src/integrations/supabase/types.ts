@@ -9916,6 +9916,18 @@ export type Database = {
       }
     }
     Functions: {
+      _notify_parents_of_student: {
+        Args: {
+          _action_url: string
+          _message: string
+          _metadata?: Json
+          _org_id: string
+          _student_id: string
+          _title: string
+          _type: string
+        }
+        Returns: undefined
+      }
       admit_student_atomic: {
         Args: {
           p_admitted_by?: string
