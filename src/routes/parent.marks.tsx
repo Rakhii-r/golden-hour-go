@@ -44,7 +44,7 @@ function MarksPage() {
         studentId: student.id,
         organizationId: student.organization_id,
         student: {
-          name: student.name,
+          name: student.name ?? "Student",
           admission_number: student.admission_number ?? null,
           roll_number: student.roll_number ?? null,
           class: student.class ?? null,
