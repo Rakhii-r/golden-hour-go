@@ -348,6 +348,7 @@ function DocumentsPage() {
             <SelectContent>
               <SelectItem value="all">All Documents ({counts.all})</SelectItem>
               <SelectItem value="fee_receipt">Fee Receipts ({counts.fee_receipt})</SelectItem>
+              <SelectItem value="report_card">Report Cards ({counts.report_card})</SelectItem>
               <SelectItem value="student_document">Student Documents ({counts.student_document})</SelectItem>
               <SelectItem value="circular_attachment">Circular Attachments ({counts.circular_attachment})</SelectItem>
             </SelectContent>
