@@ -66,6 +66,7 @@ function DocumentsRoute() {
 
 function DocumentsPage() {
   const { student, studentId, organization } = useParentDashboardCtx();
+  const { user } = useParentAuth();
   const [rows, setRows] = useState<DocRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<DocCategory | "all">("all");
@@ -76,6 +77,8 @@ function DocumentsPage() {
   const [reportOpen, setReportOpen] = useState(false);
   const [reportData, setReportData] = useState<ReportCardData | null>(null);
   const [reportBundle, setReportBundle] = useState<ReportCardBundle | null>(null);
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const [reloadTick, setReloadTick] = useState(0);
 
   useEffect(() => {
     if (!studentId || !student?.organization_id) return;
