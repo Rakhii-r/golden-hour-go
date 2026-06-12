@@ -222,7 +222,7 @@ function DocumentsPage() {
       }
     })();
     return () => { cancelled = true; };
-  }, [studentId, student?.organization_id]);
+  }, [studentId, student?.organization_id, reloadTick]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
