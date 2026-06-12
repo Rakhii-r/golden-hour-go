@@ -268,6 +268,18 @@ function DocumentsPage() {
       setReceiptOpen(true);
       return;
     }
+    if (row.category === "report_card") {
+      const examTypeId = (row.meta?.exam_type_id ?? null) as string | null;
+      if (!examTypeId || !reportBundle) return;
+      const data = reportBundle.build(examTypeId);
+      if (!data) {
+        toast.error("Unable to build report card");
+        return;
+      }
+      setReportData(data);
+      setReportOpen(true);
+      return;
+    }
     if (!row.bucket || !row.path) return;
     setDownloading(row.id);
     const url = await getSignedUrl(row.bucket, row.path);
