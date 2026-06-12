@@ -113,7 +113,8 @@ export function ParentLayout({ children }: { children: React.ReactNode }) {
         {/* Right: Bell + Avatar + Logout */}
         <div className="ml-auto flex items-center gap-3">
           {/* Notification bell */}
-          <button
+          <Link
+            to="/parent/notifications"
             className="relative flex h-9 w-9 items-center justify-center rounded-full bg-white/15 transition hover:bg-white/25"
             aria-label="Notifications"
           >
@@ -123,7 +124,7 @@ export function ParentLayout({ children }: { children: React.ReactNode }) {
                 {notifCount > 9 ? "9+" : notifCount}
               </span>
             )}
-          </button>
+          </Link>
 
           {/* Avatar + parent name */}
           <div className="hidden items-center gap-2.5 rounded-full bg-white/15 px-3 py-1.5 sm:flex">
