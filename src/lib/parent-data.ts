@@ -356,6 +356,8 @@ export async function getFeeSummary(
     .from("student_fee_overrides")
     .select("id")
     .eq("student_id", studentId)
+    .is("archived_at", null)
+    .neq("status", "cancelled")
     .or("billing_type.is.null,billing_type.neq.daycare")
     .order("created_at", { ascending: false })
     .limit(1)
