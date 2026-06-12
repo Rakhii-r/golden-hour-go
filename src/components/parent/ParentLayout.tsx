@@ -20,6 +20,7 @@ import {
 import { useParentAuth } from "@/hooks/use-parent-auth";
 import { useParentDashboardCtx } from "@/hooks/parent-dashboard-context";
 import { useParentUnreadCount } from "@/hooks/use-parent-messaging";
+import { useParentNotifications } from "@/hooks/use-parent-notifications";
 
 const NAV = [
   { to: "/parent/dashboard",    label: "Overview",      icon: LayoutDashboard },
@@ -51,13 +52,16 @@ export function ParentLayout({ children }: { children: React.ReactNode }) {
   const { logout, user } = useParentAuth();
   const { student, organization, circulars } = useParentDashboardCtx();
   const unreadCount = useParentUnreadCount(user?.id ?? null, student?.organization_id ?? null);
+  const { unreadCount: notifUnread } = useParentNotifications(user?.id ?? null, 50);
   const navigate = useNavigate();
   const location = useLocation();
 
   const isActive = (to: string) => location.pathname === to;
   const parentName = student?.father_name || student?.mother_name || "Parent";
   const parentInitials = getInitials(parentName);
-  const notifCount = (circulars ?? []).length;
+  const notifCount = notifUnread;
+  // Suppress unused warning while preserving original API for future use
+  void circulars;
 
   const handleLogout = async () => {
     await logout();
@@ -109,7 +113,8 @@ export function ParentLayout({ children }: { children: React.ReactNode }) {
         {/* Right: Bell + Avatar + Logout */}
         <div className="ml-auto flex items-center gap-3">
           {/* Notification bell */}
-          <button
+          <Link
+            to="/parent/notifications"
             className="relative flex h-9 w-9 items-center justify-center rounded-full bg-white/15 transition hover:bg-white/25"
             aria-label="Notifications"
           >
@@ -119,7 +124,7 @@ export function ParentLayout({ children }: { children: React.ReactNode }) {
                 {notifCount > 9 ? "9+" : notifCount}
               </span>
             )}
-          </button>
+          </Link>
 
           {/* Avatar + parent name */}
           <div className="hidden items-center gap-2.5 rounded-full bg-white/15 px-3 py-1.5 sm:flex">

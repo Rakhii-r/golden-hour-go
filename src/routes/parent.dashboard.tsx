@@ -11,7 +11,9 @@ import {
   ArrowRight,
   Star,
   MessageSquare,
+  Bell as BellIcon,
 } from "lucide-react";
+import { useParentNotifications } from "@/hooks/use-parent-notifications";
 import { RequireParentAuth } from "@/components/parent/RequireParentAuth";
 import { ParentLayout } from "@/components/parent/ParentLayout";
 import {
@@ -563,6 +565,70 @@ function DashboardContent() {
         <AnnouncementsCard circulars={circulars} loading={loading && !circulars.length} />
         <MessagesCard />
       </div>
+
+      {/* Row 3: Recent Notifications */}
+      <RecentNotificationsCard />
+    </div>
+  );
+}
+
+/* ── Recent Notifications widget ─────────────────────────────── */
+function RecentNotificationsCard() {
+  const { user } = useParentAuth();
+  const { items, loading } = useParentNotifications(user?.id ?? null, 5);
+  const recent = items.slice(0, 5);
+  return (
+    <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+      <div className="mb-4 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#155EEF]/10 text-[#155EEF]">
+            <BellIcon className="h-4 w-4" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-gray-900">Recent Notifications</h3>
+            <p className="text-[11px] text-gray-500">Latest alerts and updates</p>
+          </div>
+        </div>
+        <Link
+          to="/parent/notifications"
+          className="flex items-center gap-1 text-xs font-semibold text-[#155EEF] hover:underline"
+        >
+          View all <ArrowRight className="h-3 w-3" />
+        </Link>
+      </div>
+      {loading ? (
+        <div className="space-y-2">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-14 w-full rounded-xl" />
+          ))}
+        </div>
+      ) : recent.length === 0 ? (
+        <p className="py-6 text-center text-xs text-gray-500">No notifications yet</p>
+      ) : (
+        <ul className="space-y-2">
+          {recent.map((n) => (
+            <li key={n.id}>
+              <Link
+                to="/parent/notifications"
+                className={`flex items-start gap-3 rounded-xl p-3 transition hover:bg-gray-50 ${
+                  n.read ? "" : "bg-blue-50/50"
+                }`}
+              >
+                <div className="mt-0.5 h-2 w-2 shrink-0 rounded-full bg-[#155EEF]" style={{ opacity: n.read ? 0.2 : 1 }} />
+                <div className="min-w-0 flex-1">
+                  <p className={`truncate text-sm ${n.read ? "text-gray-700" : "font-semibold text-gray-900"}`}>
+                    {n.title}
+                  </p>
+                  <p className="mt-0.5 line-clamp-1 text-xs text-gray-500">{n.message}</p>
+                </div>
+                <span className="shrink-0 text-[10px] text-gray-400">
+                  {new Date(n.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

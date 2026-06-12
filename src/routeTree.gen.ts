@@ -14,6 +14,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ParentIndexRouteImport } from './routes/parent.index'
 import { Route as ParentTimetableRouteImport } from './routes/parent.timetable'
 import { Route as ParentProfileRouteImport } from './routes/parent.profile'
+import { Route as ParentNotificationsRouteImport } from './routes/parent.notifications'
 import { Route as ParentMarksRouteImport } from './routes/parent.marks'
 import { Route as ParentForgotPasswordRouteImport } from './routes/parent.forgot-password'
 import { Route as ParentFeesRouteImport } from './routes/parent.fees'
@@ -47,6 +48,11 @@ const ParentTimetableRoute = ParentTimetableRouteImport.update({
 const ParentProfileRoute = ParentProfileRouteImport.update({
   id: '/parent/profile',
   path: '/parent/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ParentNotificationsRoute = ParentNotificationsRouteImport.update({
+  id: '/parent/notifications',
+  path: '/parent/notifications',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ParentMarksRoute = ParentMarksRouteImport.update({
@@ -107,6 +113,7 @@ export interface FileRoutesByFullPath {
   '/parent/fees': typeof ParentFeesRoute
   '/parent/forgot-password': typeof ParentForgotPasswordRoute
   '/parent/marks': typeof ParentMarksRoute
+  '/parent/notifications': typeof ParentNotificationsRoute
   '/parent/profile': typeof ParentProfileRoute
   '/parent/timetable': typeof ParentTimetableRoute
   '/parent/': typeof ParentIndexRoute
@@ -123,6 +130,7 @@ export interface FileRoutesByTo {
   '/parent/fees': typeof ParentFeesRoute
   '/parent/forgot-password': typeof ParentForgotPasswordRoute
   '/parent/marks': typeof ParentMarksRoute
+  '/parent/notifications': typeof ParentNotificationsRoute
   '/parent/profile': typeof ParentProfileRoute
   '/parent/timetable': typeof ParentTimetableRoute
   '/parent': typeof ParentIndexRoute
@@ -140,6 +148,7 @@ export interface FileRoutesById {
   '/parent/fees': typeof ParentFeesRoute
   '/parent/forgot-password': typeof ParentForgotPasswordRoute
   '/parent/marks': typeof ParentMarksRoute
+  '/parent/notifications': typeof ParentNotificationsRoute
   '/parent/profile': typeof ParentProfileRoute
   '/parent/timetable': typeof ParentTimetableRoute
   '/parent/': typeof ParentIndexRoute
@@ -158,6 +167,7 @@ export interface FileRouteTypes {
     | '/parent/fees'
     | '/parent/forgot-password'
     | '/parent/marks'
+    | '/parent/notifications'
     | '/parent/profile'
     | '/parent/timetable'
     | '/parent/'
@@ -174,6 +184,7 @@ export interface FileRouteTypes {
     | '/parent/fees'
     | '/parent/forgot-password'
     | '/parent/marks'
+    | '/parent/notifications'
     | '/parent/profile'
     | '/parent/timetable'
     | '/parent'
@@ -190,6 +201,7 @@ export interface FileRouteTypes {
     | '/parent/fees'
     | '/parent/forgot-password'
     | '/parent/marks'
+    | '/parent/notifications'
     | '/parent/profile'
     | '/parent/timetable'
     | '/parent/'
@@ -207,6 +219,7 @@ export interface RootRouteChildren {
   ParentFeesRoute: typeof ParentFeesRoute
   ParentForgotPasswordRoute: typeof ParentForgotPasswordRoute
   ParentMarksRoute: typeof ParentMarksRoute
+  ParentNotificationsRoute: typeof ParentNotificationsRoute
   ParentProfileRoute: typeof ParentProfileRoute
   ParentTimetableRoute: typeof ParentTimetableRoute
   ParentIndexRoute: typeof ParentIndexRoute
@@ -247,6 +260,13 @@ declare module '@tanstack/react-router' {
       path: '/parent/profile'
       fullPath: '/parent/profile'
       preLoaderRoute: typeof ParentProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/parent/notifications': {
+      id: '/parent/notifications'
+      path: '/parent/notifications'
+      fullPath: '/parent/notifications'
+      preLoaderRoute: typeof ParentNotificationsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/parent/marks': {
@@ -327,6 +347,7 @@ const rootRouteChildren: RootRouteChildren = {
   ParentFeesRoute: ParentFeesRoute,
   ParentForgotPasswordRoute: ParentForgotPasswordRoute,
   ParentMarksRoute: ParentMarksRoute,
+  ParentNotificationsRoute: ParentNotificationsRoute,
   ParentProfileRoute: ParentProfileRoute,
   ParentTimetableRoute: ParentTimetableRoute,
   ParentIndexRoute: ParentIndexRoute,
@@ -334,12 +355,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
