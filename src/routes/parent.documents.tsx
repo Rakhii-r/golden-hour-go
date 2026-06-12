@@ -15,6 +15,9 @@ import type { FeeReceiptData } from "@/components/parent/FeeReceipt";
 import { ReportCardDialog } from "@/components/parent/ReportCardDialog";
 import type { ReportCardData } from "@/components/parent/ReportCard";
 import { loadReportCards, type ReportCardBundle } from "@/lib/parent-report-cards";
+import { ParentDocumentUploadDialog } from "@/components/parent/ParentDocumentUploadDialog";
+import { useParentAuth } from "@/hooks/use-parent-auth";
+import { Upload } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/parent/documents")({
