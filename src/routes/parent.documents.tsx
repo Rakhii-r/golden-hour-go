@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Download, Eye, FileText, Search, Receipt, Megaphone, FileBadge, Loader2 } from "lucide-react";
+import { Download, Eye, FileText, Search, Receipt, Megaphone, FileBadge, Loader2, GraduationCap } from "lucide-react";
 import { RequireParentAuth } from "@/components/parent/RequireParentAuth";
 import { ParentLayout } from "@/components/parent/ParentLayout";
 import { ParentDashboardProvider, useParentDashboardCtx } from "@/hooks/parent-dashboard-context";
@@ -12,13 +12,16 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { FeeReceiptDialog } from "@/components/parent/FeeReceiptDialog";
 import type { FeeReceiptData } from "@/components/parent/FeeReceipt";
+import { ReportCardDialog } from "@/components/parent/ReportCardDialog";
+import type { ReportCardData } from "@/components/parent/ReportCard";
+import { loadReportCards, type ReportCardBundle } from "@/lib/parent-report-cards";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/parent/documents")({
   component: DocumentsRoute,
 });
 
-type DocCategory = "fee_receipt" | "student_document" | "circular_attachment";
+type DocCategory = "fee_receipt" | "report_card" | "student_document" | "circular_attachment";
 
 interface DocRow {
   id: string;
@@ -34,12 +37,14 @@ interface DocRow {
 
 const CATEGORY_LABEL: Record<DocCategory, string> = {
   fee_receipt: "Fee Receipt",
+  report_card: "Report Card",
   student_document: "Student Document",
   circular_attachment: "Circular Attachment",
 };
 
 const CATEGORY_ICON: Record<DocCategory, typeof FileText> = {
   fee_receipt: Receipt,
+  report_card: GraduationCap,
   student_document: FileBadge,
   circular_attachment: Megaphone,
 };
