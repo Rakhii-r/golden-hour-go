@@ -63,6 +63,7 @@ export async function loadReportCards(args: {
   schoolLogoUrl: string | null;
 }): Promise<ReportCardBundle> {
   const { studentId, organizationId, student, schoolName, schoolLogoUrl } = args;
+  const audit = import.meta.env.DEV;
 
   const [marksRes, examTypesRes, gradesRes] = await Promise.all([
     parentSupabase
@@ -83,6 +84,19 @@ export async function loadReportCards(args: {
       .eq("is_active", true)
       .order("display_order", { ascending: true }),
   ]);
+  if (audit) {
+    console.info("[parent-report-cards:audit] raw query result", {
+      studentId,
+      organizationId,
+      filters: { student_id: studentId, organization_id: organizationId, is_archived: false },
+      marksRows: marksRes.data?.length ?? 0,
+      marksError: marksRes.error?.message ?? null,
+      examTypesRows: examTypesRes.data?.length ?? 0,
+      examTypesError: examTypesRes.error?.message ?? null,
+      gradeRulesRows: gradesRes.data?.length ?? 0,
+      gradeRulesError: gradesRes.error?.message ?? null,
+    });
+  }
 
   const marks = ((marksRes.data ?? []) as Array<MarkRow & { created_at: string }>);
   const examTypes = (examTypesRes.data ?? []) as ExamType[];
@@ -137,6 +151,17 @@ export async function loadReportCards(args: {
     });
   }
   summaries.sort((a, b) => (b.latest_at > a.latest_at ? 1 : -1));
+  if (audit) {
+    console.info("[parent-report-cards:audit] transformed result", {
+      studentId,
+      rawMarksRows: marks.length,
+      groupedExamCount: groups.size,
+      summariesCount: summaries.length,
+      subjectsCount: new Set(marks.map((m) => m.subject)).size,
+      skippedWithoutExamType: marks.filter((m) => !m.exam_type_id).length,
+      skippedMissingExamType: Array.from(groups.keys()).filter((id) => !examMap.has(id)).length,
+    });
+  }
 
   const build = (examTypeId: string): ReportCardData | null => {
     const items = groups.get(examTypeId);
