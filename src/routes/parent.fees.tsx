@@ -386,8 +386,10 @@ function FeesPage() {
     (async () => {
       const { data } = await parentSupabase
         .from("student_fee_overrides")
-        .select("id, billing_type")
-        .eq("student_id", studentId);
+        .select("id, billing_type, status, archived_at")
+        .eq("student_id", studentId)
+        .is("archived_at", null)
+        .neq("status", "cancelled");
       if (cancelled) return;
       const rows = (data ?? []) as Array<{ id: string; billing_type: string | null }>;
       const school = rows.some((r) => r.billing_type !== "daycare");
