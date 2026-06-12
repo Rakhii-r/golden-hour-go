@@ -16,6 +16,7 @@ import {
   Headphones,
   ChevronDown,
   MessageSquare,
+  FolderOpen,
 } from "lucide-react";
 import { useParentAuth } from "@/hooks/use-parent-auth";
 import { useParentDashboardCtx } from "@/hooks/parent-dashboard-context";
@@ -31,11 +32,12 @@ const NAV = [
   { to: "/parent/assignments",  label: "Assignments",   icon: ClipboardList   },
   { to: "/parent/communication",label: "Communication", icon: MessageSquare   },
   { to: "/parent/circulars",    label: "Circulars",     icon: Megaphone       },
+  { to: "/parent/documents",    label: "Documents",     icon: FolderOpen      },
   { to: "/parent/profile",      label: "Profile",       icon: User            },
 ] as const;
 
 // Mobile shows Overview, Attendance, Communication, Fees, Profile
-const MOBILE_NAV_INDICES = [0, 2, 6, 3, 8] as const;
+const MOBILE_NAV_INDICES = [0, 2, 6, 3, 9] as const;
 
 function getInitials(name: string | null | undefined): string {
   if (!name) return "P";

@@ -18,6 +18,7 @@ import { Route as ParentNotificationsRouteImport } from './routes/parent.notific
 import { Route as ParentMarksRouteImport } from './routes/parent.marks'
 import { Route as ParentForgotPasswordRouteImport } from './routes/parent.forgot-password'
 import { Route as ParentFeesRouteImport } from './routes/parent.fees'
+import { Route as ParentDocumentsRouteImport } from './routes/parent.documents'
 import { Route as ParentDashboardRouteImport } from './routes/parent.dashboard'
 import { Route as ParentCommunicationRouteImport } from './routes/parent.communication'
 import { Route as ParentCircularsRouteImport } from './routes/parent.circulars'
@@ -70,6 +71,11 @@ const ParentFeesRoute = ParentFeesRouteImport.update({
   path: '/parent/fees',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ParentDocumentsRoute = ParentDocumentsRouteImport.update({
+  id: '/parent/documents',
+  path: '/parent/documents',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ParentDashboardRoute = ParentDashboardRouteImport.update({
   id: '/parent/dashboard',
   path: '/parent/dashboard',
@@ -110,6 +116,7 @@ export interface FileRoutesByFullPath {
   '/parent/circulars': typeof ParentCircularsRoute
   '/parent/communication': typeof ParentCommunicationRoute
   '/parent/dashboard': typeof ParentDashboardRoute
+  '/parent/documents': typeof ParentDocumentsRoute
   '/parent/fees': typeof ParentFeesRoute
   '/parent/forgot-password': typeof ParentForgotPasswordRoute
   '/parent/marks': typeof ParentMarksRoute
@@ -127,6 +134,7 @@ export interface FileRoutesByTo {
   '/parent/circulars': typeof ParentCircularsRoute
   '/parent/communication': typeof ParentCommunicationRoute
   '/parent/dashboard': typeof ParentDashboardRoute
+  '/parent/documents': typeof ParentDocumentsRoute
   '/parent/fees': typeof ParentFeesRoute
   '/parent/forgot-password': typeof ParentForgotPasswordRoute
   '/parent/marks': typeof ParentMarksRoute
@@ -145,6 +153,7 @@ export interface FileRoutesById {
   '/parent/circulars': typeof ParentCircularsRoute
   '/parent/communication': typeof ParentCommunicationRoute
   '/parent/dashboard': typeof ParentDashboardRoute
+  '/parent/documents': typeof ParentDocumentsRoute
   '/parent/fees': typeof ParentFeesRoute
   '/parent/forgot-password': typeof ParentForgotPasswordRoute
   '/parent/marks': typeof ParentMarksRoute
@@ -164,6 +173,7 @@ export interface FileRouteTypes {
     | '/parent/circulars'
     | '/parent/communication'
     | '/parent/dashboard'
+    | '/parent/documents'
     | '/parent/fees'
     | '/parent/forgot-password'
     | '/parent/marks'
@@ -181,6 +191,7 @@ export interface FileRouteTypes {
     | '/parent/circulars'
     | '/parent/communication'
     | '/parent/dashboard'
+    | '/parent/documents'
     | '/parent/fees'
     | '/parent/forgot-password'
     | '/parent/marks'
@@ -198,6 +209,7 @@ export interface FileRouteTypes {
     | '/parent/circulars'
     | '/parent/communication'
     | '/parent/dashboard'
+    | '/parent/documents'
     | '/parent/fees'
     | '/parent/forgot-password'
     | '/parent/marks'
@@ -216,6 +228,7 @@ export interface RootRouteChildren {
   ParentCircularsRoute: typeof ParentCircularsRoute
   ParentCommunicationRoute: typeof ParentCommunicationRoute
   ParentDashboardRoute: typeof ParentDashboardRoute
+  ParentDocumentsRoute: typeof ParentDocumentsRoute
   ParentFeesRoute: typeof ParentFeesRoute
   ParentForgotPasswordRoute: typeof ParentForgotPasswordRoute
   ParentMarksRoute: typeof ParentMarksRoute
@@ -290,6 +303,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ParentFeesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/parent/documents': {
+      id: '/parent/documents'
+      path: '/parent/documents'
+      fullPath: '/parent/documents'
+      preLoaderRoute: typeof ParentDocumentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/parent/dashboard': {
       id: '/parent/dashboard'
       path: '/parent/dashboard'
@@ -344,6 +364,7 @@ const rootRouteChildren: RootRouteChildren = {
   ParentCircularsRoute: ParentCircularsRoute,
   ParentCommunicationRoute: ParentCommunicationRoute,
   ParentDashboardRoute: ParentDashboardRoute,
+  ParentDocumentsRoute: ParentDocumentsRoute,
   ParentFeesRoute: ParentFeesRoute,
   ParentForgotPasswordRoute: ParentForgotPasswordRoute,
   ParentMarksRoute: ParentMarksRoute,
@@ -355,12 +376,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
