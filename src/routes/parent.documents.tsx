@@ -15,6 +15,9 @@ import type { FeeReceiptData } from "@/components/parent/FeeReceipt";
 import { ReportCardDialog } from "@/components/parent/ReportCardDialog";
 import type { ReportCardData } from "@/components/parent/ReportCard";
 import { loadReportCards, type ReportCardBundle } from "@/lib/parent-report-cards";
+import { ParentDocumentUploadDialog } from "@/components/parent/ParentDocumentUploadDialog";
+import { useParentAuth } from "@/hooks/use-parent-auth";
+import { Upload } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/parent/documents")({
@@ -63,6 +66,7 @@ function DocumentsRoute() {
 
 function DocumentsPage() {
   const { student, studentId, organization } = useParentDashboardCtx();
+  const { user } = useParentAuth();
   const [rows, setRows] = useState<DocRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<DocCategory | "all">("all");
@@ -73,6 +77,8 @@ function DocumentsPage() {
   const [reportOpen, setReportOpen] = useState(false);
   const [reportData, setReportData] = useState<ReportCardData | null>(null);
   const [reportBundle, setReportBundle] = useState<ReportCardBundle | null>(null);
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const [reloadTick, setReloadTick] = useState(0);
 
   useEffect(() => {
     if (!studentId || !student?.organization_id) return;
@@ -216,7 +222,7 @@ function DocumentsPage() {
       }
     })();
     return () => { cancelled = true; };
-  }, [studentId, student?.organization_id]);
+  }, [studentId, student?.organization_id, reloadTick]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -324,9 +330,17 @@ function DocumentsPage() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Documents</h1>
-        <p className="text-sm text-gray-500">Receipts, certificates, and shared files for your child.</p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Documents</h1>
+          <p className="text-sm text-gray-500">Receipts, certificates, and shared files for your child.</p>
+        </div>
+        <Button
+          onClick={() => setUploadOpen(true)}
+          disabled={!studentId || !student?.organization_id || !user?.id}
+        >
+          <Upload className="h-4 w-4 mr-1" /> Upload Document
+        </Button>
       </div>
 
       {/* Filter + search */}
@@ -422,6 +436,16 @@ function DocumentsPage() {
 
       <FeeReceiptDialog open={receiptOpen} onOpenChange={setReceiptOpen} data={receiptData} />
       <ReportCardDialog open={reportOpen} onOpenChange={setReportOpen} data={reportData} />
+      {studentId && student?.organization_id && user?.id && (
+        <ParentDocumentUploadDialog
+          open={uploadOpen}
+          onOpenChange={setUploadOpen}
+          studentId={studentId}
+          organizationId={student.organization_id}
+          userId={user.id}
+          onUploaded={() => setReloadTick((t) => t + 1)}
+        />
+      )}
     </div>
   );
 }
