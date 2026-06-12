@@ -38,7 +38,7 @@ function MarksPage() {
   useEffect(() => {
     const effectiveStudentId = studentId ?? student?.id ?? null;
     const effectiveOrganizationId = organizationId ?? student?.organization_id ?? null;
-    if (!effectiveStudentId || !effectiveOrganizationId) return;
+    if (!student || !effectiveStudentId || !effectiveOrganizationId) return;
     let cancelled = false;
     (async () => {
       setLoading(true);
