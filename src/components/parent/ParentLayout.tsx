@@ -16,6 +16,7 @@ import {
   Headphones,
   ChevronDown,
   MessageSquare,
+  FolderOpen,
 } from "lucide-react";
 import { useParentAuth } from "@/hooks/use-parent-auth";
 import { useParentDashboardCtx } from "@/hooks/parent-dashboard-context";
