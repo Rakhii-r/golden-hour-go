@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Download, Eye, FileText, Search, Receipt, Megaphone, FileBadge, Loader2 } from "lucide-react";
+import { Download, Eye, FileText, Search, Receipt, Megaphone, FileBadge, Loader2, GraduationCap } from "lucide-react";
 import { RequireParentAuth } from "@/components/parent/RequireParentAuth";
 import { ParentLayout } from "@/components/parent/ParentLayout";
 import { ParentDashboardProvider, useParentDashboardCtx } from "@/hooks/parent-dashboard-context";
@@ -12,13 +12,16 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { FeeReceiptDialog } from "@/components/parent/FeeReceiptDialog";
 import type { FeeReceiptData } from "@/components/parent/FeeReceipt";
+import { ReportCardDialog } from "@/components/parent/ReportCardDialog";
+import type { ReportCardData } from "@/components/parent/ReportCard";
+import { loadReportCards, type ReportCardBundle } from "@/lib/parent-report-cards";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/parent/documents")({
   component: DocumentsRoute,
 });
 
-type DocCategory = "fee_receipt" | "student_document" | "circular_attachment";
+type DocCategory = "fee_receipt" | "report_card" | "student_document" | "circular_attachment";
 
 interface DocRow {
   id: string;
@@ -34,12 +37,14 @@ interface DocRow {
 
 const CATEGORY_LABEL: Record<DocCategory, string> = {
   fee_receipt: "Fee Receipt",
+  report_card: "Report Card",
   student_document: "Student Document",
   circular_attachment: "Circular Attachment",
 };
 
 const CATEGORY_ICON: Record<DocCategory, typeof FileText> = {
   fee_receipt: Receipt,
+  report_card: GraduationCap,
   student_document: FileBadge,
   circular_attachment: Megaphone,
 };
@@ -65,6 +70,9 @@ function DocumentsPage() {
   const [downloading, setDownloading] = useState<string | null>(null);
   const [receiptOpen, setReceiptOpen] = useState(false);
   const [receiptData, setReceiptData] = useState<FeeReceiptData | null>(null);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportData, setReportData] = useState<ReportCardData | null>(null);
+  const [reportBundle, setReportBundle] = useState<ReportCardBundle | null>(null);
 
   useEffect(() => {
     if (!studentId || !student?.organization_id) return;
@@ -163,6 +171,44 @@ function DocumentsPage() {
         console.warn("[documents] circulars failed", e);
       }
 
+      // 4. Report Cards — derived from marks_entries grouped by exam_type
+      try {
+        if (student && organization) {
+          const bundle = await loadReportCards({
+            studentId,
+            organizationId: student.organization_id,
+            student: {
+              name: student.name ?? "Student",
+              admission_number: student.admission_number ?? null,
+              roll_number: student.roll_number ?? null,
+              class: student.class ?? null,
+              section: student.section ?? null,
+              father_name: student.father_name ?? null,
+              mother_name: student.mother_name ?? null,
+              academic_year: student.academic_year ?? null,
+            },
+            schoolName: organization.name ?? "School",
+            schoolLogoUrl: organization.logo_url ?? null,
+          });
+          if (!cancelled) setReportBundle(bundle);
+          for (const s of bundle.summaries) {
+            all.push({
+              id: `rc-${s.exam_type_id}`,
+              category: "report_card",
+              title: `Report Card — ${s.exam_name}`,
+              subtitle: `${s.subject_count} subjects · ${s.percentage != null ? `${s.percentage}%` : "—"}${s.overall_grade ? ` · Grade ${s.overall_grade}` : ""}${s.result_status ? ` · ${s.result_status}` : ""}`,
+              date: s.latest_at.slice(0, 10),
+              bucket: null,
+              path: null,
+              url: null,
+              meta: { exam_type_id: s.exam_type_id },
+            });
+          }
+        }
+      } catch (e) {
+        console.warn("[documents] report_cards failed", e);
+      }
+
       if (!cancelled) {
         all.sort((a, b) => (a.date < b.date ? 1 : -1));
         setRows(all);
@@ -222,6 +268,18 @@ function DocumentsPage() {
       setReceiptOpen(true);
       return;
     }
+    if (row.category === "report_card") {
+      const examTypeId = (row.meta?.exam_type_id ?? null) as string | null;
+      if (!examTypeId || !reportBundle) return;
+      const data = reportBundle.build(examTypeId);
+      if (!data) {
+        toast.error("Unable to build report card");
+        return;
+      }
+      setReportData(data);
+      setReportOpen(true);
+      return;
+    }
     if (!row.bucket || !row.path) return;
     setDownloading(row.id);
     const url = await getSignedUrl(row.bucket, row.path);
@@ -230,7 +288,7 @@ function DocumentsPage() {
   };
 
   const handleDownload = async (row: DocRow) => {
-    if (row.category === "fee_receipt") {
+    if (row.category === "fee_receipt" || row.category === "report_card") {
       handleView(row);
       return;
     }
@@ -257,7 +315,9 @@ function DocumentsPage() {
   };
 
   const counts = useMemo(() => {
-    const c = { all: rows.length, fee_receipt: 0, student_document: 0, circular_attachment: 0 };
+    const c: Record<DocCategory | "all", number> = {
+      all: rows.length, fee_receipt: 0, report_card: 0, student_document: 0, circular_attachment: 0,
+    };
     for (const r of rows) c[r.category]++;
     return c;
   }, [rows]);
@@ -288,6 +348,7 @@ function DocumentsPage() {
             <SelectContent>
               <SelectItem value="all">All Documents ({counts.all})</SelectItem>
               <SelectItem value="fee_receipt">Fee Receipts ({counts.fee_receipt})</SelectItem>
+              <SelectItem value="report_card">Report Cards ({counts.report_card})</SelectItem>
               <SelectItem value="student_document">Student Documents ({counts.student_document})</SelectItem>
               <SelectItem value="circular_attachment">Circular Attachments ({counts.circular_attachment})</SelectItem>
             </SelectContent>
@@ -360,6 +421,7 @@ function DocumentsPage() {
       </Card>
 
       <FeeReceiptDialog open={receiptOpen} onOpenChange={setReceiptOpen} data={receiptData} />
+      <ReportCardDialog open={reportOpen} onOpenChange={setReportOpen} data={reportData} />
     </div>
   );
 }
