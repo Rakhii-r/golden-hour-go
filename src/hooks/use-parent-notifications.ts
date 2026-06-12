@@ -98,11 +98,16 @@ export function useParentNotifications(userId: string | null | undefined, limit 
     void fetchAll();
   }, [fetchAll]);
 
-  // Realtime
+  // Realtime — use a unique topic per effect run so StrictMode's double-invoke
+  // (or a fast remount) cannot resurrect an already-subscribed channel.
+  // `supabase.channel(topic)` returns the existing instance when the topic
+  // matches, and calling `.on('postgres_changes', ...)` after `.subscribe()`
+  // throws — that was the crash.
   useEffect(() => {
     if (!userId) return;
+    const topic = `parent-notifs-${userId}-${Math.random().toString(36).slice(2, 10)}`;
     const channel = parentSupabase
-      .channel(`parent-notifs-${userId}`)
+      .channel(topic)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${userId}` },
