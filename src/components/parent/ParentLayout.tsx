@@ -20,6 +20,7 @@ import {
 import { useParentAuth } from "@/hooks/use-parent-auth";
 import { useParentDashboardCtx } from "@/hooks/parent-dashboard-context";
 import { useParentUnreadCount } from "@/hooks/use-parent-messaging";
+import { useParentNotifications } from "@/hooks/use-parent-notifications";
 
 const NAV = [
   { to: "/parent/dashboard",    label: "Overview",      icon: LayoutDashboard },
