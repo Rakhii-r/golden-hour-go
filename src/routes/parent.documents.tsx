@@ -288,7 +288,7 @@ function DocumentsPage() {
   };
 
   const handleDownload = async (row: DocRow) => {
-    if (row.category === "fee_receipt") {
+    if (row.category === "fee_receipt" || row.category === "report_card") {
       handleView(row);
       return;
     }
