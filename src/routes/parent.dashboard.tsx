@@ -11,7 +11,9 @@ import {
   ArrowRight,
   Star,
   MessageSquare,
+  Bell as BellIcon,
 } from "lucide-react";
+import { useParentNotifications } from "@/hooks/use-parent-notifications";
 import { RequireParentAuth } from "@/components/parent/RequireParentAuth";
 import { ParentLayout } from "@/components/parent/ParentLayout";
 import {
