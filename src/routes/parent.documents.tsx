@@ -171,6 +171,44 @@ function DocumentsPage() {
         console.warn("[documents] circulars failed", e);
       }
 
+      // 4. Report Cards — derived from marks_entries grouped by exam_type
+      try {
+        if (student && organization) {
+          const bundle = await loadReportCards({
+            studentId,
+            organizationId: student.organization_id,
+            student: {
+              name: student.name ?? "Student",
+              admission_number: student.admission_number ?? null,
+              roll_number: student.roll_number ?? null,
+              class: student.class ?? null,
+              section: student.section ?? null,
+              father_name: student.father_name ?? null,
+              mother_name: student.mother_name ?? null,
+              academic_year: student.academic_year ?? null,
+            },
+            schoolName: organization.name ?? "School",
+            schoolLogoUrl: organization.logo_url ?? null,
+          });
+          if (!cancelled) setReportBundle(bundle);
+          for (const s of bundle.summaries) {
+            all.push({
+              id: `rc-${s.exam_type_id}`,
+              category: "report_card",
+              title: `Report Card — ${s.exam_name}`,
+              subtitle: `${s.subject_count} subjects · ${s.percentage != null ? `${s.percentage}%` : "—"}${s.overall_grade ? ` · Grade ${s.overall_grade}` : ""}${s.result_status ? ` · ${s.result_status}` : ""}`,
+              date: s.latest_at.slice(0, 10),
+              bucket: null,
+              path: null,
+              url: null,
+              meta: { exam_type_id: s.exam_type_id },
+            });
+          }
+        }
+      } catch (e) {
+        console.warn("[documents] report_cards failed", e);
+      }
+
       if (!cancelled) {
         all.sort((a, b) => (a.date < b.date ? 1 : -1));
         setRows(all);
