@@ -52,13 +52,16 @@ export function ParentLayout({ children }: { children: React.ReactNode }) {
   const { logout, user } = useParentAuth();
   const { student, organization, circulars } = useParentDashboardCtx();
   const unreadCount = useParentUnreadCount(user?.id ?? null, student?.organization_id ?? null);
+  const { unreadCount: notifUnread } = useParentNotifications(user?.id ?? null, 50);
   const navigate = useNavigate();
   const location = useLocation();
 
   const isActive = (to: string) => location.pathname === to;
   const parentName = student?.father_name || student?.mother_name || "Parent";
   const parentInitials = getInitials(parentName);
-  const notifCount = (circulars ?? []).length;
+  const notifCount = notifUnread;
+  // Suppress unused warning while preserving original API for future use
+  void circulars;
 
   const handleLogout = async () => {
     await logout();
