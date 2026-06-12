@@ -436,6 +436,16 @@ function DocumentsPage() {
 
       <FeeReceiptDialog open={receiptOpen} onOpenChange={setReceiptOpen} data={receiptData} />
       <ReportCardDialog open={reportOpen} onOpenChange={setReportOpen} data={reportData} />
+      {studentId && student?.organization_id && user?.id && (
+        <ParentDocumentUploadDialog
+          open={uploadOpen}
+          onOpenChange={setUploadOpen}
+          studentId={studentId}
+          organizationId={student.organization_id}
+          userId={user.id}
+          onUploaded={() => setReloadTick((t) => t + 1)}
+        />
+      )}
     </div>
   );
 }
