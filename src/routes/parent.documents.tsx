@@ -330,9 +330,17 @@ function DocumentsPage() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Documents</h1>
-        <p className="text-sm text-gray-500">Receipts, certificates, and shared files for your child.</p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Documents</h1>
+          <p className="text-sm text-gray-500">Receipts, certificates, and shared files for your child.</p>
+        </div>
+        <Button
+          onClick={() => setUploadOpen(true)}
+          disabled={!studentId || !student?.organization_id || !user?.id}
+        >
+          <Upload className="h-4 w-4 mr-1" /> Upload Document
+        </Button>
       </div>
 
       {/* Filter + search */}
