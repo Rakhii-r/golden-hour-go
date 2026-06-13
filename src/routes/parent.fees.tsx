@@ -1301,8 +1301,13 @@ function FeesPage() {
         {/* ── Tab: Receipts ── */}
         {activeTab === "receipts" && (
           <div className="p-5">
-            {pageLoading ? (
+            {receiptsLoading ? (
               <Skeleton className="h-32 w-full" />
+            ) : receiptsError ? (
+              <div className="py-8 text-center">
+                <FileText className="mx-auto mb-3 h-8 w-8 parent-muted opacity-40" />
+                <p className="text-sm text-destructive">{receiptsError}</p>
+              </div>
             ) : receiptRows.length === 0 ? (
               <div className="py-8 text-center">
                 <FileText className="mx-auto mb-3 h-8 w-8 parent-muted opacity-40" />
