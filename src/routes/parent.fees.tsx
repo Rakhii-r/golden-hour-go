@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Wallet,
   CreditCard,
@@ -331,6 +331,9 @@ function FeesPage() {
   const [structureView, setStructureView] = useState<StructureView>("default");
   const [terms, setTerms] = useState<RawTerm[]>([]);
   const [payments, setPayments] = useState<FeePayment[]>([]);
+  const [allReceipts, setAllReceipts] = useState<FeePayment[]>([]);
+  const [receiptsLoading, setReceiptsLoading] = useState(true);
+  const [receiptsError, setReceiptsError] = useState<string | null>(null);
   const [pageLoading, setPageLoading] = useState(true);
   const [payingId, setPayingId] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -735,11 +738,45 @@ function FeesPage() {
     { key: "receipts", label: "Receipts", icon: <FileText className="h-4 w-4" /> },
   ];
 
-  // Receipts: completed payments with a receipt number
-  const receiptRows = useMemo(
-    () => payments.filter((p) => !!p.receipt_number),
-    [payments],
-  );
+  // Receipts: all fee_payments for the student that have a receipt_number,
+  // independent of the currently-selected School/Daycare section. Mirrors the
+  // exact query used by the Documents → Fee Receipts list so anything visible
+  // there also appears here.
+  useEffect(() => {
+    if (!studentId) return;
+    let cancelled = false;
+    (async () => {
+      setReceiptsLoading(true);
+      setReceiptsError(null);
+      try {
+        const { data, error } = await parentSupabase
+          .from("fee_payments")
+          .select(
+            "id, amount, payment_date, payment_mode, receipt_number, transaction_id, status, is_deleted, term_number, fee_head_id, late_fee_amount, discount_amount, notes, installment_id",
+          )
+          .eq("student_id", studentId)
+          .not("receipt_number", "is", null)
+          .order("payment_date", { ascending: false })
+          .limit(500);
+        if (error) throw error;
+        if (cancelled) return;
+        const rows = ((data ?? []) as Array<FeePayment & { is_deleted: boolean | null }>)
+          .filter((r) => !r.is_deleted)
+          .map((r) => ({ ...r, fee_head_name: null as string | null }));
+        setAllReceipts(rows);
+      } catch (e) {
+        if (!cancelled) setReceiptsError(e instanceof Error ? e.message : "Failed to load receipts");
+      } finally {
+        if (!cancelled) setReceiptsLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [studentId]);
+
+  const receiptRows = allReceipts;
+
 
 
   return (
@@ -1264,8 +1301,13 @@ function FeesPage() {
         {/* ── Tab: Receipts ── */}
         {activeTab === "receipts" && (
           <div className="p-5">
-            {pageLoading ? (
+            {receiptsLoading ? (
               <Skeleton className="h-32 w-full" />
+            ) : receiptsError ? (
+              <div className="py-8 text-center">
+                <FileText className="mx-auto mb-3 h-8 w-8 parent-muted opacity-40" />
+                <p className="text-sm text-destructive">{receiptsError}</p>
+              </div>
             ) : receiptRows.length === 0 ? (
               <div className="py-8 text-center">
                 <FileText className="mx-auto mb-3 h-8 w-8 parent-muted opacity-40" />
