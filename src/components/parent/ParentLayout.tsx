@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -14,7 +15,6 @@ import {
   Bell,
   Search,
   Headphones,
-  ChevronDown,
   MessageSquare,
   FolderOpen,
 } from "lucide-react";
@@ -38,17 +38,6 @@ const NAV = [
 
 // Mobile shows Overview, Attendance, Communication, Fees, Profile
 const MOBILE_NAV_INDICES = [0, 2, 6, 3, 9] as const;
-
-function getInitials(name: string | null | undefined): string {
-  if (!name) return "P";
-  return name
-    .trim()
-    .split(/\s+/)
-    .map((w) => w[0] ?? "")
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
-}
 
 export function ParentLayout({ children }: { children: React.ReactNode }) {
   const { logout, user } = useParentAuth();
