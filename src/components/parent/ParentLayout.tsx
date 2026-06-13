@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -14,7 +15,6 @@ import {
   Bell,
   Search,
   Headphones,
-  ChevronDown,
   MessageSquare,
   FolderOpen,
 } from "lucide-react";
@@ -39,17 +39,6 @@ const NAV = [
 // Mobile shows Overview, Attendance, Communication, Fees, Profile
 const MOBILE_NAV_INDICES = [0, 2, 6, 3, 9] as const;
 
-function getInitials(name: string | null | undefined): string {
-  if (!name) return "P";
-  return name
-    .trim()
-    .split(/\s+/)
-    .map((w) => w[0] ?? "")
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
-}
-
 export function ParentLayout({ children }: { children: React.ReactNode }) {
   const { logout, user } = useParentAuth();
   const { student, organization, circulars } = useParentDashboardCtx();
@@ -60,10 +49,28 @@ export function ParentLayout({ children }: { children: React.ReactNode }) {
 
   const isActive = (to: string) => location.pathname === to;
   const parentName = student?.father_name || student?.mother_name || "Parent";
-  const parentInitials = getInitials(parentName);
   const notifCount = notifUnread;
   // Suppress unused warning while preserving original API for future use
   void circulars;
+
+  /* ── Search state ── */
+  const [query, setQuery] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
+
+  const searchResults = NAV.filter((item) =>
+    item.label.toLowerCase().includes(query.trim().toLowerCase()),
+  );
+
+  useEffect(() => {
+    function onClickOutside(e: MouseEvent) {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setSearchOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, []);
 
   const handleLogout = async () => {
     await logout();
@@ -100,19 +107,65 @@ export function ParentLayout({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* Center: Search bar */}
-        <div className="mx-auto hidden max-w-xl flex-1 md:block">
+        <div ref={searchRef} className="mx-auto hidden max-w-xl flex-1 md:block">
           <div className="relative">
             <input
               type="text"
               placeholder="Search anything..."
-              readOnly
+              value={query}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                setSearchOpen(true);
+              }}
+              onFocus={() => setSearchOpen(true)}
               className="w-full rounded-full border border-white/20 bg-white/15 py-2.5 pl-5 pr-12 text-sm text-white placeholder-blue-200 backdrop-blur transition focus:border-white/40 focus:bg-white/25 focus:outline-none"
             />
             <Search className="absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-blue-200" />
+
+            {/* Search dropdown */}
+            <AnimatePresence>
+              {searchOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  transition={{ duration: 0.15 }}
+                  className="absolute left-0 right-0 top-full mt-2 overflow-hidden rounded-xl border border-white/20 bg-white shadow-lg"
+                >
+                  {query.trim() === "" ? (
+                    <div className="px-4 py-3 text-sm text-gray-500">
+                      Start typing to search…
+                    </div>
+                  ) : searchResults.length === 0 ? (
+                    <div className="px-4 py-3 text-sm text-gray-500">
+                      No results found
+                    </div>
+                  ) : (
+                    <ul className="max-h-64 overflow-y-auto py-1">
+                      {searchResults.map((item) => (
+                        <li key={item.to}>
+                          <Link
+                            to={item.to}
+                            onClick={() => {
+                              setQuery("");
+                              setSearchOpen(false);
+                            }}
+                            className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 transition hover:bg-gray-50"
+                          >
+                            <item.icon className="h-4 w-4 shrink-0 text-gray-400" />
+                            {item.label}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
 
-        {/* Right: Bell + Avatar + Logout */}
+        {/* Right: Bell + Name + Logout */}
         <div className="ml-auto flex items-center gap-3">
           {/* Notification bell */}
           <Link
@@ -128,16 +181,12 @@ export function ParentLayout({ children }: { children: React.ReactNode }) {
             )}
           </Link>
 
-          {/* Avatar + parent name */}
-          <div className="hidden items-center gap-2.5 rounded-full bg-white/15 px-3 py-1.5 sm:flex">
-            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/30 text-[11px] font-bold text-white">
-              {parentInitials}
-            </div>
-            <div className="hidden text-left lg:block">
+          {/* Parent name */}
+          <div className="hidden items-center rounded-full bg-white/15 px-3 py-1.5 sm:flex">
+            <div className="text-left">
               <p className="text-xs font-semibold leading-tight text-white">{parentName}</p>
               <p className="text-[10px] leading-tight text-blue-200">Parent</p>
             </div>
-            <ChevronDown className="h-3 w-3 text-blue-200" />
           </div>
 
           {/* Logout */}
