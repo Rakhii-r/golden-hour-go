@@ -49,10 +49,28 @@ export function ParentLayout({ children }: { children: React.ReactNode }) {
 
   const isActive = (to: string) => location.pathname === to;
   const parentName = student?.father_name || student?.mother_name || "Parent";
-  const parentInitials = getInitials(parentName);
   const notifCount = notifUnread;
   // Suppress unused warning while preserving original API for future use
   void circulars;
+
+  /* ── Search state ── */
+  const [query, setQuery] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
+
+  const searchResults = NAV.filter((item) =>
+    item.label.toLowerCase().includes(query.trim().toLowerCase()),
+  );
+
+  useEffect(() => {
+    function onClickOutside(e: MouseEvent) {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setSearchOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, []);
 
   const handleLogout = async () => {
     await logout();
