@@ -331,6 +331,9 @@ function FeesPage() {
   const [structureView, setStructureView] = useState<StructureView>("default");
   const [terms, setTerms] = useState<RawTerm[]>([]);
   const [payments, setPayments] = useState<FeePayment[]>([]);
+  const [allReceipts, setAllReceipts] = useState<FeePayment[]>([]);
+  const [receiptsLoading, setReceiptsLoading] = useState(true);
+  const [receiptsError, setReceiptsError] = useState<string | null>(null);
   const [pageLoading, setPageLoading] = useState(true);
   const [payingId, setPayingId] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
