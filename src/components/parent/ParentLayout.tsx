@@ -165,7 +165,7 @@ export function ParentLayout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
 
-        {/* Right: Bell + Avatar + Logout */}
+        {/* Right: Bell + Name + Logout */}
         <div className="ml-auto flex items-center gap-3">
           {/* Notification bell */}
           <Link
