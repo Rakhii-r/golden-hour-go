@@ -107,15 +107,61 @@ export function ParentLayout({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* Center: Search bar */}
-        <div className="mx-auto hidden max-w-xl flex-1 md:block">
+        <div ref={searchRef} className="mx-auto hidden max-w-xl flex-1 md:block">
           <div className="relative">
             <input
               type="text"
               placeholder="Search anything..."
-              readOnly
+              value={query}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                setSearchOpen(true);
+              }}
+              onFocus={() => setSearchOpen(true)}
               className="w-full rounded-full border border-white/20 bg-white/15 py-2.5 pl-5 pr-12 text-sm text-white placeholder-blue-200 backdrop-blur transition focus:border-white/40 focus:bg-white/25 focus:outline-none"
             />
             <Search className="absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-blue-200" />
+
+            {/* Search dropdown */}
+            <AnimatePresence>
+              {searchOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  transition={{ duration: 0.15 }}
+                  className="absolute left-0 right-0 top-full mt-2 overflow-hidden rounded-xl border border-white/20 bg-white shadow-lg"
+                >
+                  {query.trim() === "" ? (
+                    <div className="px-4 py-3 text-sm text-gray-500">
+                      Start typing to search…
+                    </div>
+                  ) : searchResults.length === 0 ? (
+                    <div className="px-4 py-3 text-sm text-gray-500">
+                      No results found
+                    </div>
+                  ) : (
+                    <ul className="max-h-64 overflow-y-auto py-1">
+                      {searchResults.map((item) => (
+                        <li key={item.to}>
+                          <Link
+                            to={item.to}
+                            onClick={() => {
+                              setQuery("");
+                              setSearchOpen(false);
+                            }}
+                            className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 transition hover:bg-gray-50"
+                          >
+                            <item.icon className="h-4 w-4 shrink-0 text-gray-400" />
+                            {item.label}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
 
