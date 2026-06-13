@@ -181,16 +181,12 @@ export function ParentLayout({ children }: { children: React.ReactNode }) {
             )}
           </Link>
 
-          {/* Avatar + parent name */}
-          <div className="hidden items-center gap-2.5 rounded-full bg-white/15 px-3 py-1.5 sm:flex">
-            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/30 text-[11px] font-bold text-white">
-              {parentInitials}
-            </div>
-            <div className="hidden text-left lg:block">
+          {/* Parent name */}
+          <div className="hidden items-center rounded-full bg-white/15 px-3 py-1.5 sm:flex">
+            <div className="text-left">
               <p className="text-xs font-semibold leading-tight text-white">{parentName}</p>
               <p className="text-[10px] leading-tight text-blue-200">Parent</p>
             </div>
-            <ChevronDown className="h-3 w-3 text-blue-200" />
           </div>
 
           {/* Logout */}
