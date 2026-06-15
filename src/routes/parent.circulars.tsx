@@ -168,9 +168,38 @@ function CircularsPage() {
   }, [student?.organization_id, student?.class]);
 
   const selectedFileName = useMemo(
-    () => (selected?.attachment_url ? fileNameFromUrl(selected.attachment_url) : null),
+    () => (selected?.attachment_url ? fileNameFromPath(selected.attachment_url) : null),
     [selected?.attachment_url],
   );
+
+  const [attachmentBusy, setAttachmentBusy] = useState<"view" | "download" | null>(null);
+
+  const openAttachment = async (mode: "view" | "download") => {
+    if (!selected?.attachment_url) return;
+    setAttachmentBusy(mode);
+    try {
+      const raw = selected.attachment_url;
+      // Handle both raw storage paths and full URLs (legacy data).
+      const isFullUrl = /^https?:\/\//i.test(raw);
+      let url: string | null = null;
+      if (isFullUrl) {
+        url = raw;
+      } else {
+        const fileName = fileNameFromPath(raw);
+        const { data, error } = await parentSupabase.storage
+          .from("circulars")
+          .createSignedUrl(raw, 60 * 10, mode === "download" ? { download: fileName } : undefined);
+        if (error || !data?.signedUrl) {
+          toast.error(error?.message || "Unable to open attachment");
+          return;
+        }
+        url = data.signedUrl;
+      }
+      window.open(url, "_blank", "noopener,noreferrer");
+    } finally {
+      setAttachmentBusy(null);
+    }
+  };
 
   return (
     <div className="space-y-5">
