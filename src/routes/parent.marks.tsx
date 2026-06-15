@@ -194,6 +194,12 @@ function MarksPage() {
           );
         })
       )}
+
+      <ReportCardDialog
+        open={openCard !== null}
+        onOpenChange={(o) => !o && setOpenCard(null)}
+        data={openCard}
+      />
     </div>
   );
 }
