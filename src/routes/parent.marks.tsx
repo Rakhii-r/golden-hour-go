@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { GraduationCap } from "lucide-react";
+import { GraduationCap, Download } from "lucide-react";
 import { RequireParentAuth } from "@/components/parent/RequireParentAuth";
 import { ParentLayout } from "@/components/parent/ParentLayout";
 import {
@@ -8,8 +8,10 @@ import {
   useParentDashboardCtx,
 } from "@/hooks/parent-dashboard-context";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import { loadReportCards, type ReportCardSummary } from "@/lib/parent-report-cards";
 import type { ReportCardData } from "@/components/parent/ReportCard";
+import { ReportCardDialog } from "@/components/parent/ReportCardDialog";
 
 export const Route = createFileRoute("/parent/marks")({
   head: () => ({
@@ -34,6 +36,8 @@ function MarksPage() {
   const [summaries, setSummaries] = useState<ReportCardSummary[]>([]);
   const [cards, setCards] = useState<Record<string, ReportCardData | null>>({});
   const [loading, setLoading] = useState(true);
+  const [openCard, setOpenCard] = useState<ReportCardData | null>(null);
+
 
   useEffect(() => {
     const effectiveStudentId = studentId ?? student?.id ?? null;
