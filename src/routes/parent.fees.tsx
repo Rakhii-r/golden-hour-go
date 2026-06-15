@@ -343,6 +343,10 @@ function FeesPage() {
   const [selectedItems, setSelectedItems] = useState<Record<string, Set<string>>>({});
   const [receiptOpen, setReceiptOpen] = useState(false);
   const [receiptData, setReceiptData] = useState<FeeReceiptData | null>(null);
+  const [statementOpen, setStatementOpen] = useState(false);
+  const [statementData, setStatementData] = useState<FeeStatementData | null>(null);
+  const [statementFileName, setStatementFileName] = useState<string>("Fee-Statement");
+  const [selectedTermNumber, setSelectedTermNumber] = useState<string>("");
 
   const openReceipt = (p: FeePayment) => {
     if (!student || !organization) return;
