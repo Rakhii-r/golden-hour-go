@@ -1510,6 +1510,12 @@ function FeesPage() {
       </div>
 
       <FeeReceiptDialog open={receiptOpen} onOpenChange={setReceiptOpen} data={receiptData} />
+      <FeeStatementDialog
+        open={statementOpen}
+        onOpenChange={setStatementOpen}
+        data={statementData}
+        fileName={statementFileName}
+      />
     </div>
   );
 }
