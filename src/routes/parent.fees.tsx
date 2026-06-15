@@ -371,6 +371,85 @@ function FeesPage() {
     setReceiptOpen(true);
   };
 
+  const studentMeta = () => ({
+    student_name: student?.name ?? "Student",
+    admission_number: student?.admission_number ?? null,
+    class_label: student?.class
+      ? `${student.class}${student.section ? " - " + student.section : ""}`
+      : null,
+    parent_name: null,
+    school_name: organization?.name ?? "School",
+    school_logo_url: organization?.logo_url ?? null,
+  });
+
+  // Overall statement: every receipted payment for the student across sections.
+  const openOverallStatement = () => {
+    if (!student || !organization) {
+      toast.error("Student details still loading. Please retry in a moment.");
+      return;
+    }
+    const payList: FeeStatementPayment[] = allReceipts.map((p) => ({
+      receipt_number: p.receipt_number,
+      payment_date: p.payment_date,
+      payment_mode: p.payment_mode,
+      fee_head_name: p.fee_head_name ?? null,
+      term_number: p.term_number ?? null,
+      amount: Number(p.amount ?? 0),
+      transaction_id: p.transaction_id,
+    }));
+    const totalPaidAll = payList.reduce((s, p) => s + p.amount, 0);
+    setStatementData({
+      title: "Consolidated Fee Statement",
+      subtitle: `${sectionLabel} view · all historical receipts included`,
+      ...studentMeta(),
+      academic_year: null,
+      total_fees: totalFees,
+      total_paid: Math.max(paidFees, totalPaidAll),
+      balance_due: pendingFees,
+      payments: payList,
+      generated_at: new Date().toISOString(),
+    });
+    setStatementFileName(
+      `Fee-Statement-${(student.name ?? "student").replace(/\s+/g, "_")}`,
+    );
+    setStatementOpen(true);
+  };
+
+  // Term/semester receipt: payments + balances scoped to one term_number.
+  const openTermStatement = (termNumber: number) => {
+    if (!student || !organization) return;
+    const tg = termGroups.find((g) => g.termNumber === termNumber);
+    const termPayments = payments.filter((p) => p.term_number === termNumber);
+    const payList: FeeStatementPayment[] = termPayments.map((p) => ({
+      receipt_number: p.receipt_number,
+      payment_date: p.payment_date,
+      payment_mode: p.payment_mode,
+      fee_head_name: p.fee_head_name ?? null,
+      term_number: p.term_number ?? termNumber,
+      amount: Number(p.amount ?? 0),
+      transaction_id: p.transaction_id,
+    }));
+    const total = tg?.total ?? payList.reduce((s, p) => s + p.amount, 0);
+    const paid = tg?.paid ?? payList.reduce((s, p) => s + p.amount, 0);
+    const balance = tg?.pending ?? Math.max(0, total - paid);
+    setStatementData({
+      title: `${tg?.installmentName ?? `Term ${termNumber}`} — Fee Receipt`,
+      subtitle: sectionLabel,
+      ...studentMeta(),
+      academic_year: null,
+      total_fees: total,
+      total_paid: paid,
+      balance_due: balance,
+      payments: payList,
+      generated_at: new Date().toISOString(),
+    });
+    setStatementFileName(
+      `Term-${termNumber}-Receipt-${(student.name ?? "student").replace(/\s+/g, "_")}`,
+    );
+    setStatementOpen(true);
+  };
+
+
 
   const toggleItemSelection = (parentTermId: string, itemId: string) =>
     setSelectedItems((prev) => {
