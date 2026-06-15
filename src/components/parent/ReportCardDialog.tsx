@@ -20,7 +20,7 @@ export function ReportCardDialog({ open, onOpenChange, data }: Props) {
     setBusy("pdf");
     try {
       const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
-        import("html2canvas"),
+        import("html2canvas-pro"),
         import("jspdf"),
       ]);
       const canvas = await html2canvas(ref.current, { scale: 2, backgroundColor: "#ffffff" });

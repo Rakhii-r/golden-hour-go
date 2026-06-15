@@ -17,26 +17,64 @@ export function FeeStatementDialog({ open, onOpenChange, data, fileName }: Props
   const [busy, setBusy] = useState<"pdf" | "print" | null>(null);
 
   const handleDownload = async () => {
-    if (!ref.current || !data) return;
+    if (!ref.current || !data) {
+      toast.error("Statement not ready yet");
+      return;
+    }
     setBusy("pdf");
     try {
+      // html2canvas-pro: drop-in replacement that supports modern CSS color
+      // functions (oklch/lab/color-mix) emitted by Tailwind v4 tokens. The
+      // classic html2canvas throws on those and leaves the button stuck.
       const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
-        import("html2canvas"),
+        import("html2canvas-pro"),
         import("jspdf"),
       ]);
-      const canvas = await html2canvas(ref.current, { scale: 2, backgroundColor: "#ffffff" });
+
+      // Pre-load the logo so a broken/CORS-blocked image can't hang the
+      // canvas pass. If it fails, hide the <img> in the clone.
+      const logoEl = ref.current.querySelector("img") as HTMLImageElement | null;
+      if (logoEl && logoEl.src) {
+        await new Promise<void>((resolve) => {
+          if (logoEl.complete && logoEl.naturalWidth > 0) return resolve();
+          const done = () => resolve();
+          logoEl.addEventListener("load", done, { once: true });
+          logoEl.addEventListener("error", () => {
+            logoEl.style.visibility = "hidden";
+            resolve();
+          }, { once: true });
+          setTimeout(done, 4000); // hard timeout
+        });
+      }
+
+      const canvas = await html2canvas(ref.current, {
+        scale: 2,
+        backgroundColor: "#ffffff",
+        useCORS: true,
+        allowTaint: false,
+        logging: false,
+        imageTimeout: 4000,
+        onclone: (doc) => {
+          // If the logo failed to load, strip it from the clone so the
+          // serializer doesn't block on it.
+          doc.querySelectorAll("img").forEach((img) => {
+            const i = img as HTMLImageElement;
+            if (!i.complete || i.naturalWidth === 0) i.remove();
+          });
+        },
+      });
+
       const img = canvas.toDataURL("image/png");
       const pdf = new jsPDF({ unit: "pt", format: "a4" });
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
       const imgWidth = pageWidth - 40;
-      const ratio = canvas.height / canvas.width;
-      const imgHeight = imgWidth * ratio;
+      const pxPerPt = canvas.width / imgWidth;
+      const imgHeight = canvas.height / pxPerPt;
+
       if (imgHeight <= pageHeight - 40) {
         pdf.addImage(img, "PNG", 20, 20, imgWidth, imgHeight);
       } else {
-        // Multi-page: slice the canvas into page-sized chunks.
-        const pxPerPt = canvas.width / imgWidth;
         const pageContentHeightPx = (pageHeight - 40) * pxPerPt;
         let renderedPx = 0;
         const tmp = document.createElement("canvas");
@@ -55,8 +93,14 @@ export function FeeStatementDialog({ open, onOpenChange, data, fileName }: Props
         }
       }
       pdf.save(`${fileName ?? "Fee-Statement"}.pdf`);
+      toast.success("PDF downloaded");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to generate PDF");
+      console.error("[FeeStatement] PDF generation failed:", e);
+      toast.error(
+        e instanceof Error
+          ? `Failed to generate PDF: ${e.message}`
+          : "Failed to generate PDF",
+      );
     } finally {
       setBusy(null);
     }
