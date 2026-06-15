@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Megaphone, Paperclip, Download, ExternalLink } from "lucide-react";
+import { Megaphone, Paperclip, Download, ExternalLink, Loader2 } from "lucide-react";
 import { RequireParentAuth } from "@/components/parent/RequireParentAuth";
 import { ParentLayout } from "@/components/parent/ParentLayout";
 import {
@@ -16,6 +16,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { parentSupabase } from "@/lib/parent-supabase";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/parent/circulars")({
   head: () => ({
@@ -63,11 +64,15 @@ const fmtDateTime = (s: string | null) => {
   }
 };
 
-const fileNameFromUrl = (url: string) => {
+// Circulars.attachment_url stores a STORAGE PATH inside the private
+// "circulars" bucket (e.g. "<org-id>/0.123.pdf"), NOT a public URL.
+// Linking to it as a raw href navigates the browser to a relative app URL
+// and returns HTML / encoded text — what the user sees as "unreadable
+// coded content". We must mint a signed URL from the "circulars" bucket.
+const fileNameFromPath = (p: string) => {
   try {
-    const u = new URL(url);
-    const parts = u.pathname.split("/").filter(Boolean);
-    return decodeURIComponent(parts[parts.length - 1] || "attachment");
+    const last = p.split(/[\\/]/).pop() ?? p;
+    return decodeURIComponent(last) || "attachment";
   } catch {
     return "attachment";
   }
