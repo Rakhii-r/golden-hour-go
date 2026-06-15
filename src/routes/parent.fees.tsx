@@ -22,6 +22,8 @@ import { parentSupabase, PARENT_SUPABASE_PUBLISHABLE_KEY, PARENT_SUPABASE_URL } 
 import { toast } from "sonner";
 import { FeeReceiptDialog } from "@/components/parent/FeeReceiptDialog";
 import type { FeeReceiptData } from "@/components/parent/FeeReceipt";
+import { FeeStatementDialog } from "@/components/parent/FeeStatementDialog";
+import type { FeeStatementData, FeeStatementPayment } from "@/components/parent/FeeStatement";
 
 
 // ─── Razorpay (unchanged) ───────────────────────────────────────────────────
@@ -341,6 +343,10 @@ function FeesPage() {
   const [selectedItems, setSelectedItems] = useState<Record<string, Set<string>>>({});
   const [receiptOpen, setReceiptOpen] = useState(false);
   const [receiptData, setReceiptData] = useState<FeeReceiptData | null>(null);
+  const [statementOpen, setStatementOpen] = useState(false);
+  const [statementData, setStatementData] = useState<FeeStatementData | null>(null);
+  const [statementFileName, setStatementFileName] = useState<string>("Fee-Statement");
+  const [selectedTermNumber, setSelectedTermNumber] = useState<string>("");
 
   const openReceipt = (p: FeePayment) => {
     if (!student || !organization) return;
@@ -364,6 +370,85 @@ function FeesPage() {
     });
     setReceiptOpen(true);
   };
+
+  const studentMeta = () => ({
+    student_name: student?.name ?? "Student",
+    admission_number: student?.admission_number ?? null,
+    class_label: student?.class
+      ? `${student.class}${student.section ? " - " + student.section : ""}`
+      : null,
+    parent_name: null,
+    school_name: organization?.name ?? "School",
+    school_logo_url: organization?.logo_url ?? null,
+  });
+
+  // Overall statement: every receipted payment for the student across sections.
+  const openOverallStatement = () => {
+    if (!student || !organization) {
+      toast.error("Student details still loading. Please retry in a moment.");
+      return;
+    }
+    const payList: FeeStatementPayment[] = allReceipts.map((p) => ({
+      receipt_number: p.receipt_number,
+      payment_date: p.payment_date,
+      payment_mode: p.payment_mode,
+      fee_head_name: p.fee_head_name ?? null,
+      term_number: p.term_number ?? null,
+      amount: Number(p.amount ?? 0),
+      transaction_id: p.transaction_id,
+    }));
+    const totalPaidAll = payList.reduce((s, p) => s + p.amount, 0);
+    setStatementData({
+      title: "Consolidated Fee Statement",
+      subtitle: `${sectionLabel} view · all historical receipts included`,
+      ...studentMeta(),
+      academic_year: null,
+      total_fees: totalFees,
+      total_paid: Math.max(paidFees, totalPaidAll),
+      balance_due: pendingFees,
+      payments: payList,
+      generated_at: new Date().toISOString(),
+    });
+    setStatementFileName(
+      `Fee-Statement-${(student.name ?? "student").replace(/\s+/g, "_")}`,
+    );
+    setStatementOpen(true);
+  };
+
+  // Term/semester receipt: payments + balances scoped to one term_number.
+  const openTermStatement = (termNumber: number) => {
+    if (!student || !organization) return;
+    const tg = termGroups.find((g) => g.termNumber === termNumber);
+    const termPayments = payments.filter((p) => p.term_number === termNumber);
+    const payList: FeeStatementPayment[] = termPayments.map((p) => ({
+      receipt_number: p.receipt_number,
+      payment_date: p.payment_date,
+      payment_mode: p.payment_mode,
+      fee_head_name: p.fee_head_name ?? null,
+      term_number: p.term_number ?? termNumber,
+      amount: Number(p.amount ?? 0),
+      transaction_id: p.transaction_id,
+    }));
+    const total = tg?.total ?? payList.reduce((s, p) => s + p.amount, 0);
+    const paid = tg?.paid ?? payList.reduce((s, p) => s + p.amount, 0);
+    const balance = tg?.pending ?? Math.max(0, total - paid);
+    setStatementData({
+      title: `${tg?.installmentName ?? `Term ${termNumber}`} — Fee Receipt`,
+      subtitle: sectionLabel,
+      ...studentMeta(),
+      academic_year: null,
+      total_fees: total,
+      total_paid: paid,
+      balance_due: balance,
+      payments: payList,
+      generated_at: new Date().toISOString(),
+    });
+    setStatementFileName(
+      `Term-${termNumber}-Receipt-${(student.name ?? "student").replace(/\s+/g, "_")}`,
+    );
+    setStatementOpen(true);
+  };
+
 
 
   const toggleItemSelection = (parentTermId: string, itemId: string) =>
@@ -858,8 +943,54 @@ function FeesPage() {
         </div>
       </div>
 
+      {/* ── Download actions ── */}
+      <div className="glass flex flex-wrap items-center justify-between gap-3 p-4">
+        <div className="text-sm parent-muted">
+          Download official fee documents in PDF — matches the school's CRM receipt format.
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={openOverallStatement}
+            disabled={pageLoading || receiptsLoading || !student}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/10 px-3 py-1.5 text-sm font-medium text-primary hover:bg-primary/20 disabled:opacity-60"
+          >
+            <Download className="h-4 w-4" />
+            Download Overall Fee Statement
+          </button>
+          <div className="flex items-center gap-1.5 rounded-lg border border-border bg-background px-2 py-1">
+            <select
+              value={selectedTermNumber}
+              onChange={(e) => setSelectedTermNumber(e.target.value)}
+              className="bg-transparent text-sm focus:outline-none"
+              disabled={pageLoading || termGroups.length === 0}
+            >
+              <option value="">Select Term/Semester…</option>
+              {termGroups.map((tg) => (
+                <option key={tg.parentTermId} value={String(tg.termNumber)}>
+                  {tg.installmentName ?? `Term ${tg.termNumber}`}
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={() => {
+                if (!selectedTermNumber) {
+                  toast.info("Pick a term/semester first.");
+                  return;
+                }
+                openTermStatement(Number(selectedTermNumber));
+              }}
+              disabled={pageLoading || !selectedTermNumber}
+              className="inline-flex items-center gap-1 rounded-md bg-secondary px-2.5 py-1 text-xs font-medium text-secondary-foreground hover:opacity-90 disabled:opacity-60"
+            >
+              <Download className="h-3.5 w-3.5" />
+              Download
+            </button>
+          </div>
+        </div>
+      </div>
 
       {/* ── Tabs ── */}
+
       <div className="glass overflow-hidden">
         {/* Tab bar */}
         <div className="flex border-b border-border">
@@ -1379,6 +1510,12 @@ function FeesPage() {
       </div>
 
       <FeeReceiptDialog open={receiptOpen} onOpenChange={setReceiptOpen} data={receiptData} />
+      <FeeStatementDialog
+        open={statementOpen}
+        onOpenChange={setStatementOpen}
+        data={statementData}
+        fileName={statementFileName}
+      />
     </div>
   );
 }
