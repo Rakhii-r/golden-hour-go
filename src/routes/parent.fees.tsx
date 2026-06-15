@@ -22,6 +22,8 @@ import { parentSupabase, PARENT_SUPABASE_PUBLISHABLE_KEY, PARENT_SUPABASE_URL } 
 import { toast } from "sonner";
 import { FeeReceiptDialog } from "@/components/parent/FeeReceiptDialog";
 import type { FeeReceiptData } from "@/components/parent/FeeReceipt";
+import { FeeStatementDialog } from "@/components/parent/FeeStatementDialog";
+import type { FeeStatementData, FeeStatementPayment } from "@/components/parent/FeeStatement";
 
 
 // ─── Razorpay (unchanged) ───────────────────────────────────────────────────
