@@ -41,9 +41,15 @@ interface AssignmentRow {
 }
 
 const fmtDate = (s: string | null) => {
-  if (!s) return "—";
+  if (!s) return "No due date";
   try {
-    return new Date(s).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+    const d = new Date(s);
+    const dateStr = d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+    // assignments.due_date is timestamptz — include the time only when it's non-midnight
+    const hasTime = d.getHours() !== 0 || d.getMinutes() !== 0;
+    if (!hasTime) return dateStr;
+    const timeStr = d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true });
+    return `${dateStr} · ${timeStr}`;
   } catch {
     return s;
   }
