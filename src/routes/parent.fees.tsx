@@ -840,15 +840,21 @@ function FeesPage() {
             "id, amount, payment_date, payment_mode, receipt_number, transaction_id, status, is_deleted, term_number, fee_head_id, late_fee_amount, discount_amount, notes, installment_id",
           )
           .eq("student_id", studentId)
-          .not("receipt_number", "is", null)
           .order("payment_date", { ascending: false })
           .limit(500);
         if (error) throw error;
         if (cancelled) return;
         const rows = ((data ?? []) as Array<FeePayment & { is_deleted: boolean | null }>)
           .filter((r) => !r.is_deleted)
-          .map((r) => ({ ...r, fee_head_name: null as string | null }));
+          // Some historic payments were imported without a receipt number — synthesize
+          // a stable display number so they still appear in the Receipts tab / PDFs.
+          .map((r) => ({
+            ...r,
+            receipt_number: r.receipt_number ?? `RCPT-${r.id.slice(0, 8).toUpperCase()}`,
+            fee_head_name: null as string | null,
+          }));
         setAllReceipts(rows);
+
       } catch (e) {
         if (!cancelled) setReceiptsError(e instanceof Error ? e.message : "Failed to load receipts");
       } finally {
