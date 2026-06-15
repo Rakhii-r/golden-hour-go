@@ -283,26 +283,30 @@ function CircularsPage() {
                     <span className="truncate">{selectedFileName}</span>
                   </div>
                   <div className="mt-3 flex flex-wrap gap-2">
-                    <Button asChild size="sm" variant="outline">
-                      <a
-                        href={selected.attachment_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => openAttachment("view")}
+                      disabled={attachmentBusy !== null}
+                    >
+                      {attachmentBusy === "view" ? (
+                        <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                      ) : (
                         <ExternalLink className="mr-1.5 h-4 w-4" />
-                        View
-                      </a>
+                      )}
+                      View
                     </Button>
-                    <Button asChild size="sm">
-                      <a
-                        href={selected.attachment_url}
-                        download={selectedFileName ?? ""}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
+                    <Button
+                      size="sm"
+                      onClick={() => openAttachment("download")}
+                      disabled={attachmentBusy !== null}
+                    >
+                      {attachmentBusy === "download" ? (
+                        <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                      ) : (
                         <Download className="mr-1.5 h-4 w-4" />
-                        Download
-                      </a>
+                      )}
+                      Download
                     </Button>
                   </div>
                 </div>
