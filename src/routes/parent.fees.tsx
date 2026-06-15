@@ -943,8 +943,54 @@ function FeesPage() {
         </div>
       </div>
 
+      {/* ── Download actions ── */}
+      <div className="glass flex flex-wrap items-center justify-between gap-3 p-4">
+        <div className="text-sm parent-muted">
+          Download official fee documents in PDF — matches the school's CRM receipt format.
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={openOverallStatement}
+            disabled={pageLoading || receiptsLoading || !student}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/10 px-3 py-1.5 text-sm font-medium text-primary hover:bg-primary/20 disabled:opacity-60"
+          >
+            <Download className="h-4 w-4" />
+            Download Overall Fee Statement
+          </button>
+          <div className="flex items-center gap-1.5 rounded-lg border border-border bg-background px-2 py-1">
+            <select
+              value={selectedTermNumber}
+              onChange={(e) => setSelectedTermNumber(e.target.value)}
+              className="bg-transparent text-sm focus:outline-none"
+              disabled={pageLoading || termGroups.length === 0}
+            >
+              <option value="">Select Term/Semester…</option>
+              {termGroups.map((tg) => (
+                <option key={tg.parentTermId} value={String(tg.termNumber)}>
+                  {tg.installmentName ?? `Term ${tg.termNumber}`}
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={() => {
+                if (!selectedTermNumber) {
+                  toast.info("Pick a term/semester first.");
+                  return;
+                }
+                openTermStatement(Number(selectedTermNumber));
+              }}
+              disabled={pageLoading || !selectedTermNumber}
+              className="inline-flex items-center gap-1 rounded-md bg-secondary px-2.5 py-1 text-xs font-medium text-secondary-foreground hover:opacity-90 disabled:opacity-60"
+            >
+              <Download className="h-3.5 w-3.5" />
+              Download
+            </button>
+          </div>
+        </div>
+      </div>
 
       {/* ── Tabs ── */}
+
       <div className="glass overflow-hidden">
         {/* Tab bar */}
         <div className="flex border-b border-border">
