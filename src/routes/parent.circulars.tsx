@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Megaphone, Paperclip, Download, ExternalLink } from "lucide-react";
+import { Megaphone, Paperclip, Download, ExternalLink, Loader2 } from "lucide-react";
 import { RequireParentAuth } from "@/components/parent/RequireParentAuth";
 import { ParentLayout } from "@/components/parent/ParentLayout";
 import {
@@ -16,6 +16,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { parentSupabase } from "@/lib/parent-supabase";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/parent/circulars")({
   head: () => ({
@@ -63,11 +64,15 @@ const fmtDateTime = (s: string | null) => {
   }
 };
 
-const fileNameFromUrl = (url: string) => {
+// Circulars.attachment_url stores a STORAGE PATH inside the private
+// "circulars" bucket (e.g. "<org-id>/0.123.pdf"), NOT a public URL.
+// Linking to it as a raw href navigates the browser to a relative app URL
+// and returns HTML / encoded text — what the user sees as "unreadable
+// coded content". We must mint a signed URL from the "circulars" bucket.
+const fileNameFromPath = (p: string) => {
   try {
-    const u = new URL(url);
-    const parts = u.pathname.split("/").filter(Boolean);
-    return decodeURIComponent(parts[parts.length - 1] || "attachment");
+    const last = p.split(/[\\/]/).pop() ?? p;
+    return decodeURIComponent(last) || "attachment";
   } catch {
     return "attachment";
   }
@@ -163,9 +168,38 @@ function CircularsPage() {
   }, [student?.organization_id, student?.class]);
 
   const selectedFileName = useMemo(
-    () => (selected?.attachment_url ? fileNameFromUrl(selected.attachment_url) : null),
+    () => (selected?.attachment_url ? fileNameFromPath(selected.attachment_url) : null),
     [selected?.attachment_url],
   );
+
+  const [attachmentBusy, setAttachmentBusy] = useState<"view" | "download" | null>(null);
+
+  const openAttachment = async (mode: "view" | "download") => {
+    if (!selected?.attachment_url) return;
+    setAttachmentBusy(mode);
+    try {
+      const raw = selected.attachment_url;
+      // Handle both raw storage paths and full URLs (legacy data).
+      const isFullUrl = /^https?:\/\//i.test(raw);
+      let url: string | null = null;
+      if (isFullUrl) {
+        url = raw;
+      } else {
+        const fileName = fileNameFromPath(raw);
+        const { data, error } = await parentSupabase.storage
+          .from("circulars")
+          .createSignedUrl(raw, 60 * 10, mode === "download" ? { download: fileName } : undefined);
+        if (error || !data?.signedUrl) {
+          toast.error(error?.message || "Unable to open attachment");
+          return;
+        }
+        url = data.signedUrl;
+      }
+      window.open(url, "_blank", "noopener,noreferrer");
+    } finally {
+      setAttachmentBusy(null);
+    }
+  };
 
   return (
     <div className="space-y-5">
@@ -249,26 +283,30 @@ function CircularsPage() {
                     <span className="truncate">{selectedFileName}</span>
                   </div>
                   <div className="mt-3 flex flex-wrap gap-2">
-                    <Button asChild size="sm" variant="outline">
-                      <a
-                        href={selected.attachment_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => openAttachment("view")}
+                      disabled={attachmentBusy !== null}
+                    >
+                      {attachmentBusy === "view" ? (
+                        <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                      ) : (
                         <ExternalLink className="mr-1.5 h-4 w-4" />
-                        View
-                      </a>
+                      )}
+                      View
                     </Button>
-                    <Button asChild size="sm">
-                      <a
-                        href={selected.attachment_url}
-                        download={selectedFileName ?? ""}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
+                    <Button
+                      size="sm"
+                      onClick={() => openAttachment("download")}
+                      disabled={attachmentBusy !== null}
+                    >
+                      {attachmentBusy === "download" ? (
+                        <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                      ) : (
                         <Download className="mr-1.5 h-4 w-4" />
-                        Download
-                      </a>
+                      )}
+                      Download
                     </Button>
                   </div>
                 </div>

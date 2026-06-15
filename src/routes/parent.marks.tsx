@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { GraduationCap } from "lucide-react";
+import { GraduationCap, Download } from "lucide-react";
 import { RequireParentAuth } from "@/components/parent/RequireParentAuth";
 import { ParentLayout } from "@/components/parent/ParentLayout";
 import {
@@ -8,8 +8,10 @@ import {
   useParentDashboardCtx,
 } from "@/hooks/parent-dashboard-context";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import { loadReportCards, type ReportCardSummary } from "@/lib/parent-report-cards";
 import type { ReportCardData } from "@/components/parent/ReportCard";
+import { ReportCardDialog } from "@/components/parent/ReportCardDialog";
 
 export const Route = createFileRoute("/parent/marks")({
   head: () => ({
@@ -34,6 +36,8 @@ function MarksPage() {
   const [summaries, setSummaries] = useState<ReportCardSummary[]>([]);
   const [cards, setCards] = useState<Record<string, ReportCardData | null>>({});
   const [loading, setLoading] = useState(true);
+  const [openCard, setOpenCard] = useState<ReportCardData | null>(null);
+
 
   useEffect(() => {
     const effectiveStudentId = studentId ?? student?.id ?? null;
@@ -130,19 +134,29 @@ function MarksPage() {
           if (!card) return null;
           return (
             <div key={s.exam_type_id} className="glass p-5">
-              <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-secondary">
-                <GraduationCap className="h-4 w-4" /> {s.exam_name}
+              <div className="mb-3 flex flex-wrap items-center gap-2">
+                <h2 className="flex items-center gap-2 text-sm font-semibold text-secondary">
+                  <GraduationCap className="h-4 w-4" /> {s.exam_name}
+                </h2>
                 {s.academic_year && (
-                  <span className="ml-2 rounded-full border border-border bg-muted px-2 py-0.5 text-xs parent-muted">
+                  <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-xs parent-muted">
                     {s.academic_year}
                   </span>
                 )}
                 {s.percentage != null && (
-                  <span className="ml-auto text-xs parent-muted">
+                  <span className="text-xs parent-muted">
                     {s.total_obtained}/{s.total_max} · {s.percentage}% {s.overall_grade ? `· ${s.overall_grade}` : ""}
                   </span>
                 )}
-              </h2>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="ml-auto"
+                  onClick={() => setOpenCard(card)}
+                >
+                  <Download className="mr-1.5 h-4 w-4" /> Download Report Card
+                </Button>
+              </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead className="text-left parent-muted">
@@ -180,6 +194,12 @@ function MarksPage() {
           );
         })
       )}
+
+      <ReportCardDialog
+        open={openCard !== null}
+        onOpenChange={(o) => !o && setOpenCard(null)}
+        data={openCard}
+      />
     </div>
   );
 }
