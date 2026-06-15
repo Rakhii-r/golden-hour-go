@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import { parentSupabase } from "@/lib/parent-supabase";
 import {
   getConversations,
@@ -164,7 +165,16 @@ export function useParentMessaging(params: {
       try {
         let attachmentUrl: string | null = null;
         if (file) {
-          attachmentUrl = await uploadMessageAttachment(parentId, file);
+          try {
+            attachmentUrl = await uploadMessageAttachment(parentId, file);
+          } catch (uploadErr: unknown) {
+            // Surface a clear reason so attachments don't silently stay "Pending".
+            // Most common cause is the "message-attachments" bucket not existing
+            // or storage RLS not allowing the parent to write to their own folder.
+            const msg = uploadErr instanceof Error ? uploadErr.message : "Attachment upload failed";
+            toast.error(`Could not upload attachment: ${msg}`);
+            throw uploadErr;
+          }
         }
 
         const msg = await sendMessage({
@@ -189,7 +199,9 @@ export function useParentMessaging(params: {
           ),
         );
       } catch (e: unknown) {
-        setError(e instanceof Error ? e.message : "Failed to send message");
+        const errMsg = e instanceof Error ? e.message : "Failed to send message";
+        setError(errMsg);
+        toast.error(errMsg);
       } finally {
         setSendingMessage(false);
       }
