@@ -6,4 +6,8 @@
 // You can pass additional config via defineConfig({ vite: { ... } }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
-export default defineConfig();
+// nitro: { preset: "vercel" } switches the Nitro server target from Cloudflare to Vercel.
+// Output goes to .vercel/output (Build Output API v3), not dist.
+export default defineConfig({
+  nitro: { preset: "vercel" },
+});
