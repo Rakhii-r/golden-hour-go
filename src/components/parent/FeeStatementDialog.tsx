@@ -127,8 +127,8 @@ export function FeeStatementDialog({ open, onOpenChange, data, fileName }: Props
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden p-0">
-        <DialogHeader className="px-6 pt-5 pb-3 border-b">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden p-0 flex flex-col">
+        <DialogHeader className="px-6 pt-5 pb-3 border-b shrink-0">
           <div className="flex items-center justify-between gap-3">
             <DialogTitle>{data?.title ?? "Fee Statement"}</DialogTitle>
             <div className="flex items-center gap-2">
@@ -145,7 +145,7 @@ export function FeeStatementDialog({ open, onOpenChange, data, fileName }: Props
             </div>
           </div>
         </DialogHeader>
-        <div className="overflow-auto bg-muted/30 p-6 flex justify-center">
+        <div className="flex-1 min-h-0 overflow-auto bg-muted/30 p-6 flex justify-center">
           {data ? (
             <div className="shadow-lg">
               <FeeStatement ref={ref} data={data} />
