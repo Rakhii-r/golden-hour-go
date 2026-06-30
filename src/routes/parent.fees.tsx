@@ -1044,9 +1044,12 @@ function FeesPage() {
                   return (
                     <div key={key} className="overflow-hidden rounded-xl border border-border">
                       {/* Term header */}
-                      <button
+                      <div
+                        role="button"
+                        tabIndex={0}
                         onClick={() => toggleExpand(key)}
-                        className="flex w-full items-center justify-between gap-3 bg-muted/30 px-4 py-3 text-left transition hover:bg-muted/50"
+                        onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && toggleExpand(key)}
+                        className="flex w-full cursor-pointer items-center justify-between gap-3 bg-muted/30 px-4 py-3 text-left transition hover:bg-muted/50"
                       >
                         <div className="flex min-w-0 items-center gap-2">
                           {isOpen ? (
@@ -1098,7 +1101,7 @@ function FeesPage() {
                             </button>
                           )}
                         </div>
-                      </button>
+                      </div>
 
                       {/* Fee head breakdown inside the term */}
                       {isOpen && (
