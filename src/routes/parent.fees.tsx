@@ -1042,21 +1042,12 @@ function FeesPage() {
                   const selectedPayKey = `${tg.parentTermId}:${selectedRows.map((r) => r.id).join(",")}`;
                   return (
                     <div key={key} className="overflow-hidden rounded-xl border border-border">
-<<<<<<< HEAD
-                      {/* Term header */}
-                      <div
-                        role="button"
-                        tabIndex={0}
-                        onClick={() => toggleExpand(key)}
-                        onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && toggleExpand(key)}
-=======
                       {/* Term header — use div so the Pay Full Term button inside is valid interactive content */}
                       <div
                         onClick={() => toggleExpand(key)}
                         role="button"
                         tabIndex={0}
                         onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") toggleExpand(key); }}
->>>>>>> 444f8863953184844e4a7ba02e4923d690b07ec5
                         className="flex w-full cursor-pointer items-center justify-between gap-3 bg-muted/30 px-4 py-3 text-left transition hover:bg-muted/50"
                       >
                         <div className="flex min-w-0 items-center gap-2">
