@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Download, Printer, X } from "lucide-react";
+import { Download, Printer } from "lucide-react";
 import { FeeStatement, type FeeStatementData } from "./FeeStatement";
 import { toast } from "sonner";
 
@@ -138,9 +138,6 @@ export function FeeStatementDialog({ open, onOpenChange, data, fileName }: Props
               <Button size="sm" onClick={handleDownload} disabled={!data || busy !== null}>
                 <Download className="h-4 w-4 mr-1" />
                 {busy === "pdf" ? "Generating…" : "Download PDF"}
-              </Button>
-              <Button size="sm" variant="ghost" onClick={() => onOpenChange(false)} aria-label="Close">
-                <X className="h-4 w-4" />
               </Button>
             </div>
           </div>

@@ -737,7 +737,6 @@ function FeesPage() {
         description: descriptor,
         prefill: { name: student.name ?? undefined },
         theme: { color: "#FF6B00" },
-        config_id: "config_SmTmClnmVbHhKf",
         handler: async (response: {
           razorpay_order_id: string;
           razorpay_payment_id: string;
@@ -787,7 +786,7 @@ function FeesPage() {
             setPayingId(null);
           }
         },
-        modal: { ondismiss: () => setPayingId(null) },
+        modal: { ondismiss: () => { toast.info("Payment cancelled."); setPayingId(null); } },
       });
       rzp.open();
     } catch (e) {
@@ -1043,10 +1042,13 @@ function FeesPage() {
                   const selectedPayKey = `${tg.parentTermId}:${selectedRows.map((r) => r.id).join(",")}`;
                   return (
                     <div key={key} className="overflow-hidden rounded-xl border border-border">
-                      {/* Term header */}
-                      <button
+                      {/* Term header — use div so the Pay Full Term button inside is valid interactive content */}
+                      <div
                         onClick={() => toggleExpand(key)}
-                        className="flex w-full items-center justify-between gap-3 bg-muted/30 px-4 py-3 text-left transition hover:bg-muted/50"
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") toggleExpand(key); }}
+                        className="flex w-full cursor-pointer items-center justify-between gap-3 bg-muted/30 px-4 py-3 text-left transition hover:bg-muted/50"
                       >
                         <div className="flex min-w-0 items-center gap-2">
                           {isOpen ? (
@@ -1098,7 +1100,7 @@ function FeesPage() {
                             </button>
                           )}
                         </div>
-                      </button>
+                      </div>
 
                       {/* Fee head breakdown inside the term */}
                       {isOpen && (
