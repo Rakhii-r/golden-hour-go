@@ -231,18 +231,16 @@ export function AttendanceCalendar({ studentId, organizationId }: Props) {
       </div>
 
       {/* Stats row */}
-      <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <div className="mt-4 grid grid-cols-3 gap-2">
         <StatChip label="Attendance" value={`${stats.pct}%`}          accent="text-[#155EEF]" bg="bg-blue-50" />
         <StatChip label="Present"    value={String(stats.present)}    accent="text-emerald-600" bg="bg-emerald-50" />
         <StatChip label="Absent"     value={String(stats.absent)}     accent="text-red-600" bg="bg-red-50" />
-        <StatChip label="Leave"      value={String(stats.leave)}      accent="text-yellow-600" bg="bg-yellow-50" />
       </div>
 
       {/* Legend */}
       <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-gray-400">
         <Legend dot="bg-emerald-500" label="Present" />
         <Legend dot="bg-red-500"     label="Absent"  />
-        <Legend dot="bg-yellow-500"  label="Leave"   />
         {stats.late > 0 && <Legend dot="bg-orange-500" label="Late" />}
       </div>
 

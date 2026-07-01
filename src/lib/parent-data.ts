@@ -22,6 +22,24 @@ export interface StudentInfo {
   transport_stop: string | null;
   aadhaar_last_four: string | null;
   status: string | null;
+  caste: string | null;
+  pen_number: string | null;
+  upper_id: string | null;
+  guardian_name: string | null;
+  guardian_phone: string | null;
+  guardian_email: string | null;
+  guardian_relation: string | null;
+  medical_record: MedicalRecord | null;
+  medical_report_url: string | null;
+}
+
+export interface MedicalRecord {
+  allergies?: string;
+  conditions?: string;
+  medications?: string;
+  doctor_name?: string;
+  doctor_phone?: string;
+  notes?: string;
 }
 
 export interface OrganizationInfo {
@@ -284,7 +302,7 @@ export async function getStudentData(studentId: string): Promise<StudentInfo | n
   const { data, error } = await parentSupabase
     .from("students_or_clients")
     .select(
-      "id, organization_id, name, admission_number, class, section, roll_number, father_name, mother_name, photo_url, academic_year, gender, date_of_birth, blood_group, phone, address, transport_opted, transport_route, transport_stop, aadhaar_last_four, status",
+      "id, organization_id, name, admission_number, class, section, roll_number, father_name, mother_name, photo_url, academic_year, gender, date_of_birth, blood_group, phone, address, transport_opted, transport_route, transport_stop, aadhaar_last_four, status, caste, pen_number, upper_id, guardian_name, guardian_phone, guardian_email, guardian_relation, medical_record, medical_report_url",
     )
     .eq("id", studentId)
     .maybeSingle();
@@ -296,7 +314,7 @@ export async function getStudentByAdmissionNo(admissionNo: string): Promise<Stud
   const { data, error } = await parentSupabase
     .from("students_or_clients")
     .select(
-      "id, organization_id, name, admission_number, class, section, roll_number, father_name, mother_name, photo_url, academic_year, gender, date_of_birth, blood_group, phone, address, transport_opted, transport_route, transport_stop, aadhaar_last_four, status",
+      "id, organization_id, name, admission_number, class, section, roll_number, father_name, mother_name, photo_url, academic_year, gender, date_of_birth, blood_group, phone, address, transport_opted, transport_route, transport_stop, aadhaar_last_four, status, caste, pen_number, upper_id, guardian_name, guardian_phone, guardian_email, guardian_relation, medical_record, medical_report_url",
     )
     .ilike("admission_number", admissionNo.trim())
     .maybeSingle();
@@ -568,4 +586,39 @@ export async function getCirculars(
     scheduled_at: r.scheduled_at,
     created_at: r.created_at,
   }));
+}
+
+export async function updateOwnStudentProfile(fields: {
+  address: string;
+  phone: string;
+  guardian_name: string;
+  guardian_phone: string;
+  guardian_email: string;
+  guardian_relation: string;
+  medical_record: MedicalRecord;
+}): Promise<void> {
+  const { error } = await parentSupabase.rpc("update_own_student_profile", {
+    p_address: fields.address,
+    p_phone: fields.phone,
+    p_guardian_name: fields.guardian_name,
+    p_guardian_phone: fields.guardian_phone,
+    p_guardian_email: fields.guardian_email,
+    p_guardian_relation: fields.guardian_relation,
+    p_medical_record: fields.medical_record,
+  });
+  if (error) throw error;
+}
+
+export async function submitParentSuggestion(
+  organizationId: string,
+  studentId: string,
+  message: string,
+): Promise<void> {
+  const { error } = await parentSupabase.from("parent_suggestions").insert({
+    organization_id: organizationId,
+    student_id: studentId,
+    parent_user_id: (await parentSupabase.auth.getUser()).data.user?.id,
+    message: message.trim(),
+  });
+  if (error) throw error;
 }
