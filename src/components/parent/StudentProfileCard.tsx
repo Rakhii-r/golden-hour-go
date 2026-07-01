@@ -355,9 +355,6 @@ export function StudentProfileCard({
             <Field label="Allergies"      value={med.allergies} />
             <Field label="Conditions"     value={med.conditions} />
             <Field label="Medications"    value={med.medications} />
-            <Field label="Doctor Name"    value={med.doctor_name} />
-            <Field label="Doctor Phone"   value={med.doctor_phone} />
-            <Field label="Notes"          value={med.notes} />
           </div>
         ) : (
           <p className="mt-2 text-xs text-gray-400">No medical information on file. Click Edit Details to add it.</p>
@@ -383,9 +380,6 @@ export function StudentProfileCard({
             <TextInput label="Allergies" value={medical.allergies} onChange={(v) => setMedical({ ...medical, allergies: v })} />
             <TextInput label="Conditions" value={medical.conditions} onChange={(v) => setMedical({ ...medical, conditions: v })} />
             <TextInput label="Medications" value={medical.medications} onChange={(v) => setMedical({ ...medical, medications: v })} />
-            <TextInput label="Doctor Name" value={medical.doctor_name} onChange={(v) => setMedical({ ...medical, doctor_name: v })} />
-            <TextInput label="Doctor Phone" value={medical.doctor_phone} onChange={(v) => setMedical({ ...medical, doctor_phone: v })} />
-            <TextInput label="Notes" value={medical.notes} onChange={(v) => setMedical({ ...medical, notes: v })} />
           </div>
           <div className="flex gap-2 pt-1">
             <Button size="sm" disabled={saving} onClick={save}>{saving ? "Saving…" : "Save"}</Button>
