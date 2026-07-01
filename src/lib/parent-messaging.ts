@@ -196,8 +196,9 @@ export async function markConversationRead(
 }
 
 // ── Teacher discovery ─────────────────────────────────────────────────
-// Uses the SAME source and SAME class_name format as getTimetable() in
-// parent-data.ts — the single source of truth for teacher assignments.
+// Uses the SAME source and SAME class_name format as the CRM-mirrored fetch
+// in components/parent/TimetableGrid.tsx — the single source of truth for
+// teacher assignments.
 //
 // REQUIRES these RLS policies to be applied in Supabase:
 //   parent_select_timetables       (migration 20260609140000)
