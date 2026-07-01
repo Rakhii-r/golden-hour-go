@@ -22,6 +22,10 @@ import { useParentAuth } from "@/hooks/use-parent-auth";
 import { useParentDashboardCtx } from "@/hooks/parent-dashboard-context";
 import { useParentUnreadCount } from "@/hooks/use-parent-messaging";
 import { useParentNotifications } from "@/hooks/use-parent-notifications";
+import { parentSupabase } from "@/lib/parent-supabase";
+
+// Verified via routeTree.gen.ts: no /parent/contact route exists.
+const PARENT_CONTACT_ROUTE_EXISTS = false;
 
 const NAV = [
   { to: "/parent/dashboard",    label: "Overview",      icon: LayoutDashboard },
@@ -75,6 +79,60 @@ export function ParentLayout({ children }: { children: React.ReactNode }) {
   const handleLogout = async () => {
     await logout();
     navigate({ to: "/parent" });
+  };
+
+  /* ── Support contact ── */
+  const [supportContact, setSupportContact] = useState<{
+    phone: string | null;
+    email: string | null;
+    whatsapp: string | null;
+  } | null>(null);
+  const [supportMsg, setSupportMsg] = useState(false);
+
+  useEffect(() => {
+    const orgId = student?.organization_id;
+    if (!orgId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data } = await parentSupabase
+          .from("organizations")
+          .select("phone, email, whatsapp")
+          .eq("id", orgId)
+          .maybeSingle();
+        if (cancelled) return;
+        setSupportContact({
+          phone: (data as any)?.phone ?? null,
+          email: (data as any)?.email ?? null,
+          whatsapp: (data as any)?.whatsapp ?? null,
+        });
+      } catch {
+        if (!cancelled) setSupportContact({ phone: null, email: null, whatsapp: null });
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [student?.organization_id]);
+
+  const handleContactUs = () => {
+    setSupportMsg(false);
+    if (supportContact?.whatsapp) {
+      window.open(`https://wa.me/${supportContact.whatsapp}`, "_blank");
+    } else if (supportContact?.phone) {
+      window.open(`tel:${supportContact.phone}`, "_self");
+    } else if (supportContact?.email) {
+      window.open(`mailto:${supportContact.email}`, "_self");
+    } else if (PARENT_CONTACT_ROUTE_EXISTS) {
+      navigate({ to: "/parent/contact" as never });
+    } else {
+      setSupportMsg(true);
+    }
+  };
+
+  const handleContactUsKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      handleContactUs();
+    }
   };
 
   return (
@@ -263,10 +321,20 @@ export function ParentLayout({ children }: { children: React.ReactNode }) {
                 </p>
               </div>
             </div>
-            <button className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-[#155EEF] py-2 text-xs font-semibold text-white transition hover:bg-[#1a56db]">
+            <button
+              type="button"
+              onClick={handleContactUs}
+              onKeyDown={handleContactUsKeyDown}
+              className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-[#155EEF] py-2 text-xs font-semibold text-white transition hover:bg-[#1a56db]"
+            >
               <Headphones className="h-3 w-3" />
               Contact Us
             </button>
+            {supportMsg && (
+              <p className="mt-2 text-[11px] leading-snug text-red-600">
+                School contact information is not available. Please contact the school administrator.
+              </p>
+            )}
           </div>
         </aside>
 

@@ -21,10 +21,26 @@ interface ExamType {
   display_order: number | null;
 }
 
-interface GradeRule {
+export interface GradeRule {
   grade: string;
   min_percentage: number;
   max_percentage: number;
+}
+
+// Falls back to these bands only when the organization has no active grade_scales rows
+// covering the given percentage (grade_scales is the DB-driven equivalent of a "grade_config" table).
+export function computeGradeForPercentage(pct: number | null, gradeRules: GradeRule[]): string | null {
+  if (pct == null) return null;
+  const r = gradeRules.find((g) => pct >= Number(g.min_percentage) && pct <= Number(g.max_percentage));
+  if (r) return r.grade;
+  if (gradeRules.length > 0) return null;
+  if (pct >= 90) return "O";
+  if (pct >= 80) return "A+";
+  if (pct >= 70) return "A";
+  if (pct >= 60) return "B+";
+  if (pct >= 50) return "B";
+  if (pct >= 40) return "C";
+  return "Fail";
 }
 
 export interface ReportCardSummary {
@@ -44,6 +60,7 @@ export interface ReportCardSummary {
 export interface ReportCardBundle {
   summaries: ReportCardSummary[];
   build: (examTypeId: string) => ReportCardData | null;
+  gradeRules: GradeRule[];
 }
 
 export async function loadReportCards(args: {
@@ -103,11 +120,7 @@ export async function loadReportCards(args: {
   const gradeRules = (gradesRes.data ?? []) as GradeRule[];
   const examMap = new Map(examTypes.map((e) => [e.id, e]));
 
-  const computeGrade = (pct: number | null): string | null => {
-    if (pct == null) return null;
-    const r = gradeRules.find((g) => pct >= Number(g.min_percentage) && pct <= Number(g.max_percentage));
-    return r?.grade ?? null;
-  };
+  const computeGrade = (pct: number | null): string | null => computeGradeForPercentage(pct, gradeRules);
 
   // Group marks by exam_type_id
   const groups = new Map<string, Array<MarkRow & { created_at: string }>>();
@@ -124,10 +137,10 @@ export async function loadReportCards(args: {
     if (!ex) continue;
     let obt = 0, max = 0;
     for (const m of items) {
-      if (m.is_absent) continue;
-      if (m.marks_obtained != null && m.max_marks != null && Number(m.max_marks) > 0) {
+      if (m.max_marks == null || Number(m.max_marks) <= 0) continue;
+      max += Number(m.max_marks);
+      if (!m.is_absent && m.marks_obtained != null) {
         obt += Number(m.marks_obtained);
-        max += Number(m.max_marks);
       }
     }
     const pct = max > 0 ? Math.round((obt / max) * 100) : null;
@@ -202,6 +215,7 @@ export async function loadReportCards(args: {
       school_name: schoolName,
       school_logo_url: schoolLogoUrl,
       subjects,
+      subject_count: summary.subject_count,
       total_obtained: summary.total_obtained,
       total_max: summary.total_max,
       percentage: summary.percentage,
@@ -213,5 +227,5 @@ export async function loadReportCards(args: {
     };
   };
 
-  return { summaries, build };
+  return { summaries, build, gradeRules };
 }

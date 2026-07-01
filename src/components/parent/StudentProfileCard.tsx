@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import {
   User,
@@ -10,9 +11,22 @@ import {
   GraduationCap,
   Hash,
   BookOpen,
+  Pencil,
+  MessageSquarePlus,
+  ShieldAlert,
+  HeartPulse,
+  FileText,
+  Loader2,
 } from "lucide-react";
-import type { StudentInfo } from "@/lib/parent-data";
+import {
+  updateOwnStudentProfile,
+  submitParentSuggestion,
+  type StudentInfo,
+  type MedicalRecord,
+} from "@/lib/parent-data";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 function calcAge(dob: string | null): string | null {
   if (!dob) return null;
@@ -49,6 +63,15 @@ function initial(name: string | null): string {
   return (parts[0]?.[0] ?? "S").toUpperCase();
 }
 
+const EMPTY_MEDICAL: Required<MedicalRecord> = {
+  allergies: "",
+  conditions: "",
+  medications: "",
+  doctor_name: "",
+  doctor_phone: "",
+  notes: "",
+};
+
 /* ── Field ───────────────────────────────────────────────────── */
 function Field({
   label,
@@ -75,6 +98,27 @@ function Field({
   );
 }
 
+function TextInput({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div>
+      <label className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">{label}</label>
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="mt-1 w-full rounded-md border border-gray-200 px-3 py-1.5 text-sm"
+      />
+    </div>
+  );
+}
+
 /* ── Main component ───────────────────────────────────────────── */
 export function StudentProfileCard({
   student,
@@ -83,6 +127,20 @@ export function StudentProfileCard({
   student: StudentInfo | null;
   loading: boolean;
 }) {
+  const [editing, setEditing] = useState(false);
+  const [addressInput, setAddressInput] = useState("");
+  const [phoneInput, setPhoneInput] = useState("");
+  const [guardianName, setGuardianName] = useState("");
+  const [guardianPhone, setGuardianPhone] = useState("");
+  const [guardianEmail, setGuardianEmail] = useState("");
+  const [guardianRelation, setGuardianRelation] = useState("");
+  const [medical, setMedical] = useState<Required<MedicalRecord>>(EMPTY_MEDICAL);
+  const [saving, setSaving] = useState(false);
+  const [suggestion, setSuggestion] = useState("");
+  const [submittingSuggestion, setSubmittingSuggestion] = useState(false);
+  const [suggestionError, setSuggestionError] = useState<string | null>(null);
+  const [savedOverrides, setSavedOverrides] = useState<Partial<StudentInfo>>({});
+
   if (loading && !student) {
     return (
       <div className="glass p-6">
@@ -107,15 +165,82 @@ export function StudentProfileCard({
 
   if (!student) return null;
 
-  const age = calcAge(student.date_of_birth);
-  const dobLabel = fmtDate(student.date_of_birth);
+  const view: StudentInfo = { ...student, ...savedOverrides };
+
+  const startEdit = () => {
+    setAddressInput(student.address ?? "");
+    setPhoneInput(student.phone ?? "");
+    setGuardianName(student.guardian_name ?? "");
+    setGuardianPhone(student.guardian_phone ?? "");
+    setGuardianEmail(student.guardian_email ?? "");
+    setGuardianRelation(student.guardian_relation ?? "");
+    setMedical({ ...EMPTY_MEDICAL, ...(student.medical_record ?? {}) });
+    setEditing(true);
+  };
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      await updateOwnStudentProfile({
+        address: addressInput,
+        phone: phoneInput,
+        guardian_name: guardianName,
+        guardian_phone: guardianPhone,
+        guardian_email: guardianEmail,
+        guardian_relation: guardianRelation,
+        medical_record: medical,
+      });
+      setSavedOverrides((prev) => ({
+        ...prev,
+        address: addressInput,
+        phone: phoneInput,
+        guardian_name: guardianName,
+        guardian_phone: guardianPhone,
+        guardian_email: guardianEmail,
+        guardian_relation: guardianRelation,
+        medical_record: medical,
+      }));
+      toast.success("Profile updated.");
+      setEditing(false);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to update profile. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const sendSuggestion = async () => {
+    if (submittingSuggestion) return;
+    const text = suggestion.trim();
+    if (text.length < 10) {
+      setSuggestionError("Please write at least 10 characters.");
+      return;
+    }
+    setSuggestionError(null);
+    setSubmittingSuggestion(true);
+    try {
+      await submitParentSuggestion(student.organization_id, student.id, text);
+      toast.success("Sent to the school.");
+      setSuggestion("");
+    } catch {
+      setSuggestionError("Failed to send. Please try again.");
+      toast.error("Failed to send. Please try again.");
+    } finally {
+      setSubmittingSuggestion(false);
+    }
+  };
+
+  const age = calcAge(view.date_of_birth);
+  const dobLabel = fmtDate(view.date_of_birth);
   const dob = dobLabel ? (age ? `${dobLabel} (${age})` : dobLabel) : null;
-  const classSection = [student.class, student.section].filter(Boolean).join(" • ") || null;
-  const transport = student.transport_opted
-    ? [student.transport_route, student.transport_stop].filter(Boolean).join(" / ") || "Opted"
+  const classSection = [view.class, view.section].filter(Boolean).join(" • ") || null;
+  const transport = view.transport_opted
+    ? [view.transport_route, view.transport_stop].filter(Boolean).join(" / ") || "Opted"
     : "Not opted";
-  const status = (student.status ?? "active").toLowerCase();
+  const status = (view.status ?? "active").toLowerCase();
   const isActive = ["active", "admitted", "enrolled"].includes(status);
+  const med = view.medical_record ?? {};
+  const hasMedicalInfo = Object.values(med).some((v) => v && String(v).trim());
 
   return (
     <motion.section
@@ -161,6 +286,11 @@ export function StudentProfileCard({
               />
               {isActive ? "Active" : "Inactive"}
             </span>
+            {!editing && (
+              <Button size="sm" variant="outline" onClick={startEdit} className="mt-1">
+                <Pencil className="mr-1 h-3.5 w-3.5" /> Edit Details
+              </Button>
+            )}
           </div>
         </div>
 
@@ -178,13 +308,115 @@ export function StudentProfileCard({
           <Field icon={User}          label="Father's Name"   value={student.father_name} />
           <Field icon={User}          label="Mother's Name"   value={student.mother_name} />
           <Field icon={Droplet}       label="Blood Group"     value={student.blood_group} />
-          <Field icon={Phone}         label="Phone (POC)"     value={student.phone} />
           <Field icon={Bus}           label="Transport"       value={transport} />
           <Field icon={IdCard}        label="Aadhaar No."     value={maskAadhaar(student.aadhaar_last_four)} />
+          <Field icon={IdCard}        label="Caste"           value={student.caste} />
+          <Field icon={IdCard}        label="PEN Number"      value={student.pen_number} />
+          <Field icon={IdCard}        label="APAR ID"         value={student.upper_id} />
+          <Field icon={Phone}         label="Phone (POC)"     value={view.phone} />
           <div className="col-span-2 lg:col-span-4">
-            <Field icon={MapPin} label="Address" value={student.address} />
+            <Field icon={MapPin} label="Address" value={view.address} />
           </div>
         </div>
+      </div>
+
+      {/* Guardian / Emergency Contact */}
+      <div className="mt-6 border-t border-gray-100 pt-5">
+        <div className="flex items-center gap-1.5 text-sm font-semibold text-gray-800">
+          <ShieldAlert className="h-4 w-4 text-gray-400" />
+          Guardian / Emergency Contact
+        </div>
+        <div className="mt-3 grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-4">
+          <Field icon={User}  label="Guardian Name"     value={view.guardian_name} />
+          <Field icon={Phone} label="Guardian Phone"    value={view.guardian_phone} />
+          <Field icon={User}  label="Guardian Email"    value={view.guardian_email} />
+          <Field icon={User}  label="Relation"          value={view.guardian_relation} />
+        </div>
+      </div>
+
+      {/* Medical Information */}
+      <div className="mt-6 border-t border-gray-100 pt-5">
+        <div className="flex items-center gap-1.5 text-sm font-semibold text-gray-800">
+          <HeartPulse className="h-4 w-4 text-gray-400" />
+          Medical Information
+        </div>
+        {student.medical_report_url && (
+          <a
+            href={student.medical_report_url}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-[#155EEF] hover:underline"
+          >
+            <FileText className="h-3.5 w-3.5" /> View uploaded medical report
+          </a>
+        )}
+        {hasMedicalInfo ? (
+          <div className="mt-3 grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
+            <Field label="Allergies"      value={med.allergies} />
+            <Field label="Conditions"     value={med.conditions} />
+            <Field label="Medications"    value={med.medications} />
+            <Field label="Doctor Name"    value={med.doctor_name} />
+            <Field label="Doctor Phone"   value={med.doctor_phone} />
+            <Field label="Notes"          value={med.notes} />
+          </div>
+        ) : (
+          <p className="mt-2 text-xs text-gray-400">No medical information on file. Click Edit Details to add it.</p>
+        )}
+      </div>
+
+      {/* Unified edit panel */}
+      {editing && (
+        <div className="mt-6 space-y-4 rounded-xl border border-gray-100 bg-gray-50/60 p-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <TextInput label="Phone (POC)" value={phoneInput} onChange={setPhoneInput} />
+            <TextInput label="Address" value={addressInput} onChange={setAddressInput} />
+          </div>
+          <div className="text-xs font-semibold uppercase tracking-wide text-gray-500">Guardian / Emergency Contact</div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <TextInput label="Guardian Name" value={guardianName} onChange={setGuardianName} />
+            <TextInput label="Guardian Phone" value={guardianPhone} onChange={setGuardianPhone} />
+            <TextInput label="Guardian Email" value={guardianEmail} onChange={setGuardianEmail} />
+            <TextInput label="Relation" value={guardianRelation} onChange={setGuardianRelation} />
+          </div>
+          <div className="text-xs font-semibold uppercase tracking-wide text-gray-500">Medical Information</div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <TextInput label="Allergies" value={medical.allergies} onChange={(v) => setMedical({ ...medical, allergies: v })} />
+            <TextInput label="Conditions" value={medical.conditions} onChange={(v) => setMedical({ ...medical, conditions: v })} />
+            <TextInput label="Medications" value={medical.medications} onChange={(v) => setMedical({ ...medical, medications: v })} />
+            <TextInput label="Doctor Name" value={medical.doctor_name} onChange={(v) => setMedical({ ...medical, doctor_name: v })} />
+            <TextInput label="Doctor Phone" value={medical.doctor_phone} onChange={(v) => setMedical({ ...medical, doctor_phone: v })} />
+            <TextInput label="Notes" value={medical.notes} onChange={(v) => setMedical({ ...medical, notes: v })} />
+          </div>
+          <div className="flex gap-2 pt-1">
+            <Button size="sm" disabled={saving} onClick={save}>{saving ? "Saving…" : "Save"}</Button>
+            <Button size="sm" variant="outline" disabled={saving} onClick={() => setEditing(false)}>Cancel</Button>
+          </div>
+        </div>
+      )}
+
+      {/* Suggestion box */}
+      <div className="mt-6 border-t border-gray-100 pt-5">
+        <div className="flex items-center gap-1.5 text-sm font-semibold text-gray-800">
+          <MessageSquarePlus className="h-4 w-4 text-gray-400" />
+          Suggestion / Note to School
+        </div>
+        <p className="mt-0.5 text-xs text-gray-400">
+          e.g. "Please give a tablet to my child daily at 1 PM." Anything you'd like the school to know.
+        </p>
+        <textarea
+          value={suggestion}
+          onChange={(e) => setSuggestion(e.target.value)}
+          rows={3}
+          className="mt-2 w-full rounded-md border border-gray-200 px-3 py-2 text-sm"
+          placeholder="Write your note here…"
+        />
+        {suggestionError && (
+          <p className="mt-1.5 text-xs font-medium text-red-600">{suggestionError}</p>
+        )}
+        <Button size="sm" className="mt-2" disabled={submittingSuggestion} onClick={sendSuggestion}>
+          {submittingSuggestion && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+          {submittingSuggestion ? "Sending…" : "Send to School"}
+        </Button>
       </div>
     </motion.section>
   );
