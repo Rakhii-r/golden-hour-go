@@ -142,13 +142,13 @@ export function BirthdayBanner({
           <div className="shrink-0">
             {student.photo_url ? (
               <img
-                src={student.photo_url}
-                alt={student.name}
+                src={student.photo_url ?? undefined}
+                alt={student.name ?? ""}
                 className="h-28 w-28 rounded-full border-4 border-white/90 object-cover shadow-2xl sm:h-32 sm:w-32"
               />
             ) : (
               <div className="flex h-28 w-28 items-center justify-center rounded-full border-4 border-white/90 bg-white/20 text-4xl font-bold text-white shadow-2xl sm:h-32 sm:w-32">
-                {student.name.charAt(0)}
+                {(student.name ?? "?").charAt(0)}
               </div>
             )}
           </div>
@@ -159,7 +159,7 @@ export function BirthdayBanner({
               <Cake className="h-3.5 w-3.5" /> Happy Birthday!
             </div>
             <h1 className="mb-2 text-2xl font-extrabold text-white drop-shadow-md sm:text-3xl md:text-4xl">
-              {student.name} 🎂
+              {student.name ?? "Student"} 🎂
             </h1>
             <p className="max-w-xl text-sm leading-relaxed text-white/95 sm:text-base">
               Wishing you a day filled with happiness, success, laughter, and
@@ -275,13 +275,13 @@ export function BirthdayGreetingDialog({
             {/* Student photo */}
             {student.photo_url ? (
               <img
-                src={student.photo_url}
-                alt={student.name}
+                src={student.photo_url ?? undefined}
+                alt={student.name ?? ""}
                 className="mb-4 h-24 w-24 rounded-full border-4 border-white object-cover shadow-lg"
               />
             ) : (
               <div className="mb-4 flex h-24 w-24 items-center justify-center rounded-full border-4 border-white bg-pink-200 text-3xl font-bold text-pink-700 shadow-lg">
-                {student.name.charAt(0)}
+                {(student.name ?? "?").charAt(0)}
               </div>
             )}
 
