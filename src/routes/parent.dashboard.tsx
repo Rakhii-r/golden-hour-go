@@ -532,25 +532,33 @@ function MessagesCard() {
 
 /* ── Dashboard Content ────────────────────────────────────────── */
 function DashboardContent() {
-  const { student, fees, marks, assignments, circulars, loading, error } =
+  const { student, organization, fees, marks, assignments, circulars, loading, error } =
     useParentDashboardCtx();
 
   const parentName = student?.father_name || student?.mother_name || "Parent";
   const studentName = student?.name ?? "your child";
+  const isBirthday = isBirthdayToday(student?.date_of_birth);
 
   return (
     <div className="space-y-5">
-      {/* Hero banner */}
-      <WelcomeBanner
-        parentName={parentName}
-        studentName={studentName}
-        studentClass={student?.class}
-        section={student?.section}
-        admissionNumber={student?.admission_number}
-      />
+      {/* Hero: Birthday banner on the student's DOB, otherwise standard welcome */}
+      {isBirthday && student ? (
+        <BirthdayExperience student={student} organization={organization} />
+      ) : (
+        <WelcomeBanner
+          parentName={parentName}
+          studentName={studentName}
+          studentClass={student?.class}
+          section={student?.section}
+          admissionNumber={student?.admission_number}
+        />
+      )}
 
       {/* Student profile */}
       <StudentProfileCard student={student} loading={loading} />
+
+      {/* Birthday wishes widget (below profile, only on birthday) */}
+      {isBirthday && student && <BirthdayWishesWidget studentName={studentName} />}
 
       {/* Error */}
       {error && (
