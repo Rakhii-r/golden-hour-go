@@ -25,6 +25,11 @@ import { useParentUnreadCount } from "@/hooks/use-parent-messaging";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StudentProfileCard } from "@/components/parent/StudentProfileCard";
 import { AttendanceCalendar } from "@/components/parent/AttendanceCalendar";
+import {
+  BirthdayExperience,
+  BirthdayWishesWidget,
+  isBirthdayToday,
+} from "@/components/parent/BirthdayExperience";
 
 export const Route = createFileRoute("/parent/dashboard")({
   head: () => ({
