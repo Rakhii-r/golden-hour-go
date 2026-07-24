@@ -17,6 +17,8 @@ import {
   Headphones,
   MessageSquare,
   FolderOpen,
+  MoreHorizontal,
+  X,
 } from "lucide-react";
 import { useParentAuth } from "@/hooks/use-parent-auth";
 import { useParentDashboardCtx } from "@/hooks/parent-dashboard-context";
@@ -40,8 +42,9 @@ const NAV = [
   { to: "/parent/profile",      label: "Profile",       icon: User            },
 ] as const;
 
-// Mobile shows Overview, Attendance, Communication, Fees, Profile
-const MOBILE_NAV_INDICES = [0, 2, 6, 3, 9] as const;
+// Primary 4 tabs on mobile bottom nav + "More" drawer for the rest
+const MOBILE_PRIMARY_INDICES = [0, 2, 3, 6] as const;   // Overview, Attendance, Fees, Communication
+const MOBILE_MORE_INDICES    = [1, 4, 5, 7, 8, 9] as const; // Timetable, Marks, Assignments, Circulars, Documents, Profile
 
 export function ParentLayout({ children }: { children: React.ReactNode }) {
   const { logout, user } = useParentAuth();
@@ -52,6 +55,12 @@ export function ParentLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
 
   const isActive = (to: string) => location.pathname === to;
+
+  // Close mobile drawers on navigation
+  useEffect(() => {
+    setMoreOpen(false);
+    setMobileSearchOpen(false);
+  }, [location.pathname]);
   const parentName = student?.father_name || student?.mother_name || "Parent";
   const notifCount = notifUnread;
   // Suppress unused warning while preserving original API for future use
@@ -60,6 +69,8 @@ export function ParentLayout({ children }: { children: React.ReactNode }) {
   /* ── Search state ── */
   const [query, setQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
 
   const searchResults = NAV.filter((item) =>
@@ -223,8 +234,17 @@ export function ParentLayout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
 
-        {/* Right: Bell + Name + Logout */}
-        <div className="ml-auto flex items-center gap-3">
+        {/* Right: Search (mobile) + Bell + Name + Logout */}
+        <div className="ml-auto flex items-center gap-2">
+          {/* Mobile search toggle */}
+          <button
+            onClick={() => setMobileSearchOpen((s) => !s)}
+            className="relative flex h-9 w-9 items-center justify-center rounded-full bg-white/15 transition hover:bg-white/25 md:hidden"
+            aria-label="Search"
+          >
+            <Search className="h-[18px] w-[18px] text-white" />
+          </button>
+
           {/* Notification bell */}
           <Link
             to="/parent/notifications"
@@ -257,6 +277,56 @@ export function ParentLayout({ children }: { children: React.ReactNode }) {
           </button>
         </div>
       </header>
+
+      {/* ── Mobile search bar (slides in below header) ── */}
+      <AnimatePresence>
+        {mobileSearchOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+            className="fixed left-0 right-0 top-[72px] z-30 border-b border-[#E2E8F0] bg-white px-4 py-3 shadow-md md:hidden"
+          >
+            <div className="relative">
+              <input
+                autoFocus
+                type="text"
+                placeholder="Search pages…"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                className="w-full rounded-full border border-gray-200 bg-gray-50 py-2.5 pl-4 pr-10 text-sm text-gray-800 focus:border-blue-400 focus:outline-none"
+              />
+              <button
+                onClick={() => { setMobileSearchOpen(false); setQuery(""); }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            {query.trim() !== "" && (
+              <ul className="mt-2 max-h-52 overflow-y-auto rounded-xl border border-gray-100 bg-white shadow-lg">
+                {searchResults.length === 0 ? (
+                  <li className="px-4 py-3 text-sm text-gray-500">No results found</li>
+                ) : (
+                  searchResults.map((item) => (
+                    <li key={item.to}>
+                      <Link
+                        to={item.to}
+                        onClick={() => { setQuery(""); setMobileSearchOpen(false); }}
+                        className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50"
+                      >
+                        <item.icon className="h-4 w-4 shrink-0 text-gray-400" />
+                        {item.label}
+                      </Link>
+                    </li>
+                  ))
+                )}
+              </ul>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── Body: sidebar + main ──────────────────────────────────── */}
       <div className="flex pt-[72px]">
@@ -358,8 +428,8 @@ export function ParentLayout({ children }: { children: React.ReactNode }) {
 
       {/* ── Mobile bottom nav ─────────────────────────────────────── */}
       <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-[#E2E8F0] bg-white shadow-[0_-4px_20px_rgba(0,0,0,0.06)] md:hidden">
-        <div className="flex items-center justify-around px-2 py-2">
-          {MOBILE_NAV_INDICES.map((idx) => {
+        <div className="flex items-center justify-around px-1 py-1.5 pb-safe">
+          {MOBILE_PRIMARY_INDICES.map((idx) => {
             const item = NAV[idx];
             const active = isActive(item.to);
             const isCommunication = item.to === "/parent/communication";
@@ -368,26 +438,107 @@ export function ParentLayout({ children }: { children: React.ReactNode }) {
               <Link
                 key={item.label}
                 to={item.to}
-                className={`relative flex flex-col items-center gap-0.5 rounded-xl px-3 py-2 text-[10px] transition ${
-                  active ? "font-semibold text-[#155EEF]" : "text-gray-400"
+                className={`relative flex flex-col items-center gap-1 rounded-xl px-3 py-2 text-[10px] font-medium transition ${
+                  active ? "text-[#155EEF]" : "text-gray-400"
                 }`}
               >
-                <div className="relative">
-                  <item.icon
-                    className={`h-5 w-5 ${active ? "text-[#155EEF]" : "text-gray-400"}`}
-                  />
+                <div className={`relative flex h-8 w-8 items-center justify-center rounded-xl transition ${active ? "bg-blue-50" : ""}`}>
+                  <item.icon className={`h-5 w-5 ${active ? "text-[#155EEF]" : "text-gray-400"}`} />
                   {badge > 0 && (
-                    <span className="absolute -right-2 -top-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[#155EEF] px-1 text-[9px] font-bold text-white">
+                    <span className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[#155EEF] px-1 text-[9px] font-bold text-white">
                       {badge > 9 ? "9+" : badge}
                     </span>
                   )}
                 </div>
-                {item.label}
+                <span className={active ? "font-semibold" : ""}>{item.label}</span>
               </Link>
             );
           })}
+
+          {/* More button */}
+          <button
+            onClick={() => setMoreOpen((s) => !s)}
+            className={`relative flex flex-col items-center gap-1 rounded-xl px-3 py-2 text-[10px] font-medium transition ${
+              moreOpen ? "text-[#155EEF]" : "text-gray-400"
+            }`}
+          >
+            <div className={`flex h-8 w-8 items-center justify-center rounded-xl transition ${moreOpen ? "bg-blue-50" : ""}`}>
+              <MoreHorizontal className={`h-5 w-5 ${moreOpen ? "text-[#155EEF]" : "text-gray-400"}`} />
+            </div>
+            <span>More</span>
+          </button>
         </div>
       </nav>
+
+      {/* ── Mobile "More" drawer ───────────────────────────────────── */}
+      <AnimatePresence>
+        {moreOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 z-40 bg-black/40 md:hidden"
+              onClick={() => setMoreOpen(false)}
+            />
+            {/* Drawer */}
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 30, stiffness: 300 }}
+              className="fixed bottom-[64px] left-0 right-0 z-50 rounded-t-3xl bg-white shadow-2xl md:hidden"
+            >
+              <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+                <p className="text-sm font-semibold text-gray-800">All Pages</p>
+                <button onClick={() => setMoreOpen(false)} className="rounded-full p-1 text-gray-400 hover:bg-gray-100">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="grid grid-cols-3 gap-2 p-4 pb-safe">
+                {MOBILE_MORE_INDICES.map((idx) => {
+                  const item = NAV[idx];
+                  const active = isActive(item.to);
+                  const badge = 0; // communication is in primary nav; no badges needed here
+                  return (
+                    <Link
+                      key={item.label}
+                      to={item.to}
+                      onClick={() => setMoreOpen(false)}
+                      className={`relative flex flex-col items-center gap-2 rounded-2xl px-2 py-4 text-xs font-medium transition ${
+                        active ? "bg-blue-50 text-[#155EEF]" : "bg-gray-50 text-gray-600 hover:bg-gray-100"
+                      }`}
+                    >
+                      <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${active ? "bg-[#155EEF]" : "bg-white"} shadow-sm`}>
+                        <item.icon className={`h-5 w-5 ${active ? "text-white" : "text-gray-500"}`} />
+                      </div>
+                      {item.label}
+                      {badge > 0 && (
+                        <span className="absolute right-2 top-2 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[#155EEF] px-1 text-[9px] font-bold text-white">
+                          {badge > 9 ? "9+" : badge}
+                        </span>
+                      )}
+                    </Link>
+                  );
+                })}
+
+                {/* Logout inside More drawer on mobile */}
+                <button
+                  onClick={() => { setMoreOpen(false); handleLogout(); }}
+                  className="flex flex-col items-center gap-2 rounded-2xl bg-red-50 px-2 py-4 text-xs font-medium text-red-500 transition hover:bg-red-100"
+                >
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white shadow-sm">
+                    <LogOut className="h-5 w-5 text-red-400" />
+                  </div>
+                  Logout
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

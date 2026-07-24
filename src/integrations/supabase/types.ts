@@ -1484,6 +1484,72 @@ export type Database = {
         }
         Relationships: []
       }
+      attendance_audit_log: {
+        Row: {
+          action: string
+          attendance_date: string
+          attendance_id: string | null
+          class_name: string
+          edited_at: string
+          edited_by: string
+          edited_by_role: string
+          id: string
+          new_status: string
+          old_status: string | null
+          organization_id: string
+          section: string | null
+          student_id: string
+          student_name: string
+        }
+        Insert: {
+          action: string
+          attendance_date: string
+          attendance_id?: string | null
+          class_name: string
+          edited_at?: string
+          edited_by: string
+          edited_by_role: string
+          id?: string
+          new_status: string
+          old_status?: string | null
+          organization_id: string
+          section?: string | null
+          student_id: string
+          student_name: string
+        }
+        Update: {
+          action?: string
+          attendance_date?: string
+          attendance_id?: string | null
+          class_name?: string
+          edited_at?: string
+          edited_by?: string
+          edited_by_role?: string
+          id?: string
+          new_status?: string
+          old_status?: string | null
+          organization_id?: string
+          section?: string | null
+          student_id?: string
+          student_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_audit_log_attendance_id_fkey"
+            columns: ["attendance_id"]
+            isOneToOne: false
+            referencedRelation: "attendance"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_audit_log_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       attendance_unlock_requests: {
         Row: {
           attendance_date: string
@@ -2850,12 +2916,84 @@ export type Database = {
           },
         ]
       }
+      daycare_attendance: {
+        Row: {
+          attendance_date: string
+          check_in_time: string | null
+          check_out_time: string | null
+          created_at: string
+          daycare_student_id: string
+          id: string
+          marked_by: string | null
+          notes: string | null
+          org_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          attendance_date: string
+          check_in_time?: string | null
+          check_out_time?: string | null
+          created_at?: string
+          daycare_student_id: string
+          id?: string
+          marked_by?: string | null
+          notes?: string | null
+          org_id: string
+          status: string
+          updated_at?: string
+        }
+        Update: {
+          attendance_date?: string
+          check_in_time?: string | null
+          check_out_time?: string | null
+          created_at?: string
+          daycare_student_id?: string
+          id?: string
+          marked_by?: string | null
+          notes?: string | null
+          org_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daycare_attendance_daycare_student_id_fkey"
+            columns: ["daycare_student_id"]
+            isOneToOne: false
+            referencedRelation: "daycare_students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daycare_attendance_marked_by_fkey"
+            columns: ["marked_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daycare_attendance_marked_by_fkey"
+            columns: ["marked_by"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daycare_attendance_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       daycare_enrollments: {
         Row: {
           created_at: string
           daycare_student_id: string
           end_date: string | null
           id: string
+          monthly_fee: number | null
           organization_id: string
           plan_id: string | null
           start_date: string
@@ -2867,6 +3005,7 @@ export type Database = {
           daycare_student_id: string
           end_date?: string | null
           id?: string
+          monthly_fee?: number | null
           organization_id: string
           plan_id?: string | null
           start_date?: string
@@ -2878,6 +3017,7 @@ export type Database = {
           daycare_student_id?: string
           end_date?: string | null
           id?: string
+          monthly_fee?: number | null
           organization_id?: string
           plan_id?: string | null
           start_date?: string
@@ -2901,11 +3041,57 @@ export type Database = {
           },
         ]
       }
+      daycare_fee_heads: {
+        Row: {
+          code: string | null
+          created_at: string
+          default_amount: number
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          organization_id: string
+          updated_at: string
+        }
+        Insert: {
+          code?: string | null
+          created_at?: string
+          default_amount?: number
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          organization_id: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string | null
+          created_at?: string
+          default_amount?: number
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          organization_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daycare_fee_heads_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       daycare_fee_overrides: {
         Row: {
           approved_by: string | null
           created_at: string
           daycare_student_id: string
+          deleted_at: string | null
+          deleted_by: string | null
           difference: number | null
           effective_from: string
           effective_to: string | null
@@ -2922,6 +3108,8 @@ export type Database = {
           approved_by?: string | null
           created_at?: string
           daycare_student_id: string
+          deleted_at?: string | null
+          deleted_by?: string | null
           difference?: number | null
           effective_from?: string
           effective_to?: string | null
@@ -2938,6 +3126,8 @@ export type Database = {
           approved_by?: string | null
           created_at?: string
           daycare_student_id?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
           difference?: number | null
           effective_from?: string
           effective_to?: string | null
@@ -2967,9 +3157,69 @@ export type Database = {
           },
         ]
       }
+      daycare_invoice_items: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string
+          fee_head_id: string | null
+          id: string
+          invoice_id: string
+          organization_id: string
+          source: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          description: string
+          fee_head_id?: string | null
+          id?: string
+          invoice_id: string
+          organization_id: string
+          source?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string
+          fee_head_id?: string | null
+          id?: string
+          invoice_id?: string
+          organization_id?: string
+          source?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daycare_invoice_items_fee_head_id_fkey"
+            columns: ["fee_head_id"]
+            isOneToOne: false
+            referencedRelation: "daycare_fee_heads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daycare_invoice_items_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "daycare_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daycare_invoice_items_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       daycare_invoices: {
         Row: {
           balance_amount: number | null
+          billing_cycle: string
+          billing_month: string | null
           created_at: string
           daycare_student_id: string
           due_date: string | null
@@ -2987,6 +3237,8 @@ export type Database = {
         }
         Insert: {
           balance_amount?: number | null
+          billing_cycle?: string
+          billing_month?: string | null
           created_at?: string
           daycare_student_id: string
           due_date?: string | null
@@ -3004,6 +3256,8 @@ export type Database = {
         }
         Update: {
           balance_amount?: number | null
+          billing_cycle?: string
+          billing_month?: string | null
           created_at?: string
           daycare_student_id?: string
           due_date?: string | null
@@ -3036,6 +3290,50 @@ export type Database = {
           },
         ]
       }
+      daycare_override_audit: {
+        Row: {
+          action: string
+          actor_id: string | null
+          after_data: Json | null
+          before_data: Json | null
+          created_at: string
+          daycare_student_id: string | null
+          id: string
+          organization_id: string
+          override_id: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          after_data?: Json | null
+          before_data?: Json | null
+          created_at?: string
+          daycare_student_id?: string | null
+          id?: string
+          organization_id: string
+          override_id?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          after_data?: Json | null
+          before_data?: Json | null
+          created_at?: string
+          daycare_student_id?: string | null
+          id?: string
+          organization_id?: string
+          override_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daycare_override_audit_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       daycare_payments: {
         Row: {
           amount: number
@@ -3048,6 +3346,7 @@ export type Database = {
           organization_id: string
           paid_on: string
           payment_mode: string
+          print_school_pan: boolean
           receipt_no: string | null
           reference_no: string | null
           updated_at: string
@@ -3063,6 +3362,7 @@ export type Database = {
           organization_id: string
           paid_on?: string
           payment_mode?: string
+          print_school_pan?: boolean
           receipt_no?: string | null
           reference_no?: string | null
           updated_at?: string
@@ -3078,6 +3378,7 @@ export type Database = {
           organization_id?: string
           paid_on?: string
           payment_mode?: string
+          print_school_pan?: boolean
           receipt_no?: string | null
           reference_no?: string | null
           updated_at?: string
@@ -3095,6 +3396,153 @@ export type Database = {
             columns: ["invoice_id"]
             isOneToOne: false
             referencedRelation: "daycare_invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      daycare_pickup_contacts: {
+        Row: {
+          created_at: string
+          daycare_student_id: string
+          deleted_at: string | null
+          id: string
+          id_proof_number: string | null
+          id_proof_type: string | null
+          is_primary: boolean
+          mobile: string
+          name: string
+          notes: string | null
+          org_id: string
+          relationship: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          daycare_student_id: string
+          deleted_at?: string | null
+          id?: string
+          id_proof_number?: string | null
+          id_proof_type?: string | null
+          is_primary?: boolean
+          mobile: string
+          name: string
+          notes?: string | null
+          org_id: string
+          relationship: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          daycare_student_id?: string
+          deleted_at?: string | null
+          id?: string
+          id_proof_number?: string | null
+          id_proof_type?: string | null
+          is_primary?: boolean
+          mobile?: string
+          name?: string
+          notes?: string | null
+          org_id?: string
+          relationship?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daycare_pickup_contacts_daycare_student_id_fkey"
+            columns: ["daycare_student_id"]
+            isOneToOne: false
+            referencedRelation: "daycare_students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daycare_pickup_contacts_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      daycare_pickup_logs: {
+        Row: {
+          created_at: string
+          daycare_student_id: string
+          id: string
+          mobile: string | null
+          notes: string | null
+          org_id: string
+          picked_by_name: string
+          pickup_contact_id: string | null
+          pickup_date: string
+          pickup_time: string
+          relationship: string | null
+          verification_method: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          daycare_student_id: string
+          id?: string
+          mobile?: string | null
+          notes?: string | null
+          org_id: string
+          picked_by_name: string
+          pickup_contact_id?: string | null
+          pickup_date?: string
+          pickup_time: string
+          relationship?: string | null
+          verification_method?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          daycare_student_id?: string
+          id?: string
+          mobile?: string | null
+          notes?: string | null
+          org_id?: string
+          picked_by_name?: string
+          pickup_contact_id?: string | null
+          pickup_date?: string
+          pickup_time?: string
+          relationship?: string | null
+          verification_method?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daycare_pickup_logs_daycare_student_id_fkey"
+            columns: ["daycare_student_id"]
+            isOneToOne: false
+            referencedRelation: "daycare_students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daycare_pickup_logs_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daycare_pickup_logs_pickup_contact_id_fkey"
+            columns: ["pickup_contact_id"]
+            isOneToOne: false
+            referencedRelation: "daycare_pickup_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daycare_pickup_logs_verified_by_fkey"
+            columns: ["verified_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daycare_pickup_logs_verified_by_fkey"
+            columns: ["verified_by"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -3183,66 +3631,263 @@ export type Database = {
         }
         Relationships: []
       }
+      daycare_staff_assignments: {
+        Row: {
+          assignment_role: string
+          created_at: string
+          daycare_staff_user_id: string
+          daycare_student_id: string
+          end_date: string | null
+          id: string
+          is_primary: boolean
+          notes: string | null
+          org_id: string
+          start_date: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          assignment_role: string
+          created_at?: string
+          daycare_staff_user_id: string
+          daycare_student_id: string
+          end_date?: string | null
+          id?: string
+          is_primary?: boolean
+          notes?: string | null
+          org_id: string
+          start_date: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          assignment_role?: string
+          created_at?: string
+          daycare_staff_user_id?: string
+          daycare_student_id?: string
+          end_date?: string | null
+          id?: string
+          is_primary?: boolean
+          notes?: string | null
+          org_id?: string
+          start_date?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daycare_staff_assignments_daycare_staff_user_id_fkey"
+            columns: ["daycare_staff_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daycare_staff_assignments_daycare_staff_user_id_fkey"
+            columns: ["daycare_staff_user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daycare_staff_assignments_daycare_student_id_fkey"
+            columns: ["daycare_student_id"]
+            isOneToOne: false
+            referencedRelation: "daycare_students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daycare_staff_assignments_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      daycare_student_documents: {
+        Row: {
+          created_at: string
+          daycare_student_id: string
+          document_type: string
+          file_name: string | null
+          file_url: string | null
+          generated_or_uploaded: string
+          id: string
+          issue_date: string | null
+          notes: string | null
+          organization_id: string
+          updated_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          daycare_student_id: string
+          document_type: string
+          file_name?: string | null
+          file_url?: string | null
+          generated_or_uploaded?: string
+          id?: string
+          issue_date?: string | null
+          notes?: string | null
+          organization_id: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          daycare_student_id?: string
+          document_type?: string
+          file_name?: string | null
+          file_url?: string | null
+          generated_or_uploaded?: string
+          id?: string
+          issue_date?: string | null
+          notes?: string | null
+          organization_id?: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daycare_student_documents_daycare_student_id_fkey"
+            columns: ["daycare_student_id"]
+            isOneToOne: false
+            referencedRelation: "daycare_students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daycare_student_documents_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       daycare_students: {
         Row: {
+          aadhaar_number: string | null
           address: string | null
           admission_number: string | null
+          allergies: string | null
           alt_mobile: string | null
+          blood_group: string | null
           child_name: string
+          city: string | null
           class: string | null
           created_at: string
+          deleted_at: string | null
+          deleted_by: string | null
           dob: string | null
           emergency_contact: string | null
+          emergency_mobile: string | null
+          emergency_name: string | null
+          emergency_relationship: string | null
+          father_mobile: string | null
+          father_name: string | null
+          father_occupation: string | null
+          first_name: string | null
           gender: string | null
           id: string
+          last_name: string | null
           linked_student_id: string | null
+          medical_conditions: string | null
           medical_notes: string | null
           mobile: string | null
+          mother_mobile: string | null
+          mother_name: string | null
+          mother_occupation: string | null
           organization_id: string
           parent_name: string | null
+          photo_url: string | null
+          pincode: string | null
           section: string | null
+          state: string | null
           status: string
           student_type: string
           updated_at: string
         }
         Insert: {
+          aadhaar_number?: string | null
           address?: string | null
           admission_number?: string | null
+          allergies?: string | null
           alt_mobile?: string | null
+          blood_group?: string | null
           child_name: string
+          city?: string | null
           class?: string | null
           created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
           dob?: string | null
           emergency_contact?: string | null
+          emergency_mobile?: string | null
+          emergency_name?: string | null
+          emergency_relationship?: string | null
+          father_mobile?: string | null
+          father_name?: string | null
+          father_occupation?: string | null
+          first_name?: string | null
           gender?: string | null
           id?: string
+          last_name?: string | null
           linked_student_id?: string | null
+          medical_conditions?: string | null
           medical_notes?: string | null
           mobile?: string | null
+          mother_mobile?: string | null
+          mother_name?: string | null
+          mother_occupation?: string | null
           organization_id: string
           parent_name?: string | null
+          photo_url?: string | null
+          pincode?: string | null
           section?: string | null
+          state?: string | null
           status?: string
           student_type: string
           updated_at?: string
         }
         Update: {
+          aadhaar_number?: string | null
           address?: string | null
           admission_number?: string | null
+          allergies?: string | null
           alt_mobile?: string | null
+          blood_group?: string | null
           child_name?: string
+          city?: string | null
           class?: string | null
           created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
           dob?: string | null
           emergency_contact?: string | null
+          emergency_mobile?: string | null
+          emergency_name?: string | null
+          emergency_relationship?: string | null
+          father_mobile?: string | null
+          father_name?: string | null
+          father_occupation?: string | null
+          first_name?: string | null
           gender?: string | null
           id?: string
+          last_name?: string | null
           linked_student_id?: string | null
+          medical_conditions?: string | null
           medical_notes?: string | null
           mobile?: string | null
+          mother_mobile?: string | null
+          mother_name?: string | null
+          mother_occupation?: string | null
           organization_id?: string
           parent_name?: string | null
+          photo_url?: string | null
+          pincode?: string | null
           section?: string | null
+          state?: string | null
           status?: string
           student_type?: string
           updated_at?: string
@@ -4465,7 +5110,9 @@ export type Database = {
           allocation_resolved_by: string | null
           allocation_status: string | null
           amount: number
+          backdated_reason: string | null
           billing_type: string
+          collected_by: string | null
           created_at: string
           created_by: string | null
           deleted_at: string | null
@@ -4475,17 +5122,23 @@ export type Database = {
           deletion_requested_at: string | null
           deletion_requested_by: string | null
           discount_amount: number | null
+          edit_reason: string | null
+          edited_at: string | null
+          edited_by: string | null
           fee_head_id: string | null
           id: string
           installment_id: string | null
           is_deleted: boolean
+          is_edited: boolean
           late_fee_amount: number | null
           notes: string | null
           organization_id: string
           payment_date: string
           payment_link_id: string | null
           payment_mode: string
+          print_school_pan: boolean
           receipt_number: string | null
+          reference_number: string | null
           status: string
           student_id: string
           tally_last_synced_at: string | null
@@ -4496,6 +5149,7 @@ export type Database = {
           term_number: number | null
           transaction_id: string | null
           updated_at: string
+          updated_by: string | null
         }
         Insert: {
           academic_year?: string
@@ -4504,7 +5158,9 @@ export type Database = {
           allocation_resolved_by?: string | null
           allocation_status?: string | null
           amount: number
+          backdated_reason?: string | null
           billing_type?: string
+          collected_by?: string | null
           created_at?: string
           created_by?: string | null
           deleted_at?: string | null
@@ -4514,17 +5170,23 @@ export type Database = {
           deletion_requested_at?: string | null
           deletion_requested_by?: string | null
           discount_amount?: number | null
+          edit_reason?: string | null
+          edited_at?: string | null
+          edited_by?: string | null
           fee_head_id?: string | null
           id?: string
           installment_id?: string | null
           is_deleted?: boolean
+          is_edited?: boolean
           late_fee_amount?: number | null
           notes?: string | null
           organization_id: string
           payment_date?: string
           payment_link_id?: string | null
           payment_mode?: string
+          print_school_pan?: boolean
           receipt_number?: string | null
+          reference_number?: string | null
           status?: string
           student_id: string
           tally_last_synced_at?: string | null
@@ -4535,6 +5197,7 @@ export type Database = {
           term_number?: number | null
           transaction_id?: string | null
           updated_at?: string
+          updated_by?: string | null
         }
         Update: {
           academic_year?: string
@@ -4543,7 +5206,9 @@ export type Database = {
           allocation_resolved_by?: string | null
           allocation_status?: string | null
           amount?: number
+          backdated_reason?: string | null
           billing_type?: string
+          collected_by?: string | null
           created_at?: string
           created_by?: string | null
           deleted_at?: string | null
@@ -4553,17 +5218,23 @@ export type Database = {
           deletion_requested_at?: string | null
           deletion_requested_by?: string | null
           discount_amount?: number | null
+          edit_reason?: string | null
+          edited_at?: string | null
+          edited_by?: string | null
           fee_head_id?: string | null
           id?: string
           installment_id?: string | null
           is_deleted?: boolean
+          is_edited?: boolean
           late_fee_amount?: number | null
           notes?: string | null
           organization_id?: string
           payment_date?: string
           payment_link_id?: string | null
           payment_mode?: string
+          print_school_pan?: boolean
           receipt_number?: string | null
+          reference_number?: string | null
           status?: string
           student_id?: string
           tally_last_synced_at?: string | null
@@ -4574,6 +5245,7 @@ export type Database = {
           term_number?: number | null
           transaction_id?: string | null
           updated_at?: string
+          updated_by?: string | null
         }
         Relationships: [
           {
@@ -6603,10 +7275,12 @@ export type Database = {
           board_affiliation: string | null
           created_at: string
           email: string | null
+          gst_number: string | null
           id: string
           logo_url: string | null
           notify_class_teacher_on_payment: boolean
           organization_id: string
+          pan_number: string | null
           phone: string | null
           place: string | null
           principal_name: string | null
@@ -6623,10 +7297,12 @@ export type Database = {
           board_affiliation?: string | null
           created_at?: string
           email?: string | null
+          gst_number?: string | null
           id?: string
           logo_url?: string | null
           notify_class_teacher_on_payment?: boolean
           organization_id: string
+          pan_number?: string | null
           phone?: string | null
           place?: string | null
           principal_name?: string | null
@@ -6643,10 +7319,12 @@ export type Database = {
           board_affiliation?: string | null
           created_at?: string
           email?: string | null
+          gst_number?: string | null
           id?: string
           logo_url?: string | null
           notify_class_teacher_on_payment?: boolean
           organization_id?: string
+          pan_number?: string | null
           phone?: string | null
           place?: string | null
           principal_name?: string | null
@@ -6884,6 +7562,42 @@ export type Database = {
           },
         ]
       }
+      parent_suggestions: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          organization_id: string
+          parent_user_id: string
+          school_reply: string | null
+          status: string
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          organization_id: string
+          parent_user_id: string
+          school_reply?: string | null
+          status?: string
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          organization_id?: string
+          parent_user_id?: string
+          school_reply?: string | null
+          status?: string
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       payment_allocations: {
         Row: {
           allocated_amount: number
@@ -6949,6 +7663,87 @@ export type Database = {
             columns: ["student_fee_term_item_id"]
             isOneToOne: false
             referencedRelation: "student_fee_term_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_edit_logs: {
+        Row: {
+          details: Json
+          edited_at: string
+          edited_by: string | null
+          id: string
+          new_amount: number | null
+          new_notes: string | null
+          new_payment_date: string | null
+          new_payment_mode: string | null
+          new_reference_number: string | null
+          old_amount: number | null
+          old_notes: string | null
+          old_payment_date: string | null
+          old_payment_mode: string | null
+          old_reference_number: string | null
+          organization_id: string
+          payment_id: string
+          reason: string
+          receipt_number: string | null
+          student_id: string
+        }
+        Insert: {
+          details?: Json
+          edited_at?: string
+          edited_by?: string | null
+          id?: string
+          new_amount?: number | null
+          new_notes?: string | null
+          new_payment_date?: string | null
+          new_payment_mode?: string | null
+          new_reference_number?: string | null
+          old_amount?: number | null
+          old_notes?: string | null
+          old_payment_date?: string | null
+          old_payment_mode?: string | null
+          old_reference_number?: string | null
+          organization_id: string
+          payment_id: string
+          reason: string
+          receipt_number?: string | null
+          student_id: string
+        }
+        Update: {
+          details?: Json
+          edited_at?: string
+          edited_by?: string | null
+          id?: string
+          new_amount?: number | null
+          new_notes?: string | null
+          new_payment_date?: string | null
+          new_payment_mode?: string | null
+          new_reference_number?: string | null
+          old_amount?: number | null
+          old_notes?: string | null
+          old_payment_date?: string | null
+          old_payment_mode?: string | null
+          old_reference_number?: string | null
+          organization_id?: string
+          payment_id?: string
+          reason?: string
+          receipt_number?: string | null
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_edit_logs_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "fee_payment_receipt_view"
+            referencedColumns: ["payment_id"]
+          },
+          {
+            foreignKeyName: "payment_edit_logs_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "fee_payments"
             referencedColumns: ["id"]
           },
         ]
@@ -7269,6 +8064,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      razorpay_orders: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          id: string
+          installment_id: string
+          organization_id: string
+          razorpay_order_id: string
+          razorpay_payment_id: string | null
+          receipt: string | null
+          status: string
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          id?: string
+          installment_id: string
+          organization_id: string
+          razorpay_order_id: string
+          razorpay_payment_id?: string | null
+          receipt?: string | null
+          status?: string
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          installment_id?: string
+          organization_id?: string
+          razorpay_order_id?: string
+          razorpay_payment_id?: string | null
+          receipt?: string | null
+          status?: string
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       roles: {
         Row: {
@@ -8521,6 +9361,8 @@ export type Database = {
           archived_by: string | null
           blood_group: string | null
           caste: string | null
+          category: string | null
+          city: string | null
           class: string | null
           created_at: string
           created_by: string | null
@@ -8550,6 +9392,7 @@ export type Database = {
           mother_occupation: string | null
           mother_phone: string | null
           name: string
+          nationality: string | null
           noc_document_url: string | null
           old_admission_number: string | null
           organization_id: string
@@ -8558,10 +9401,13 @@ export type Database = {
           pen_verified: boolean
           phone: string | null
           photo_url: string | null
+          pincode: string | null
           rejected_at: string | null
           rejected_by: string | null
+          religion: string | null
           roll_number: string | null
           section: string | null
+          state: string | null
           status: string | null
           tc_issued: boolean
           tc_issued_by: string | null
@@ -8569,8 +9415,10 @@ export type Database = {
           tc_reason: string | null
           term_payment_plan: string | null
           transport_opted: boolean
+          transport_pickup_point: string | null
           transport_route: string | null
           transport_stop: string | null
+          transport_vehicle_no: string | null
           updated_at: string
           upper_id: string | null
           upper_verified: boolean
@@ -8589,6 +9437,8 @@ export type Database = {
           archived_by?: string | null
           blood_group?: string | null
           caste?: string | null
+          category?: string | null
+          city?: string | null
           class?: string | null
           created_at?: string
           created_by?: string | null
@@ -8618,6 +9468,7 @@ export type Database = {
           mother_occupation?: string | null
           mother_phone?: string | null
           name: string
+          nationality?: string | null
           noc_document_url?: string | null
           old_admission_number?: string | null
           organization_id: string
@@ -8626,10 +9477,13 @@ export type Database = {
           pen_verified?: boolean
           phone?: string | null
           photo_url?: string | null
+          pincode?: string | null
           rejected_at?: string | null
           rejected_by?: string | null
+          religion?: string | null
           roll_number?: string | null
           section?: string | null
+          state?: string | null
           status?: string | null
           tc_issued?: boolean
           tc_issued_by?: string | null
@@ -8637,8 +9491,10 @@ export type Database = {
           tc_reason?: string | null
           term_payment_plan?: string | null
           transport_opted?: boolean
+          transport_pickup_point?: string | null
           transport_route?: string | null
           transport_stop?: string | null
+          transport_vehicle_no?: string | null
           updated_at?: string
           upper_id?: string | null
           upper_verified?: boolean
@@ -8657,6 +9513,8 @@ export type Database = {
           archived_by?: string | null
           blood_group?: string | null
           caste?: string | null
+          category?: string | null
+          city?: string | null
           class?: string | null
           created_at?: string
           created_by?: string | null
@@ -8686,6 +9544,7 @@ export type Database = {
           mother_occupation?: string | null
           mother_phone?: string | null
           name?: string
+          nationality?: string | null
           noc_document_url?: string | null
           old_admission_number?: string | null
           organization_id?: string
@@ -8694,10 +9553,13 @@ export type Database = {
           pen_verified?: boolean
           phone?: string | null
           photo_url?: string | null
+          pincode?: string | null
           rejected_at?: string | null
           rejected_by?: string | null
+          religion?: string | null
           roll_number?: string | null
           section?: string | null
+          state?: string | null
           status?: string | null
           tc_issued?: boolean
           tc_issued_by?: string | null
@@ -8705,8 +9567,10 @@ export type Database = {
           tc_reason?: string | null
           term_payment_plan?: string | null
           transport_opted?: boolean
+          transport_pickup_point?: string | null
           transport_route?: string | null
           transport_stop?: string | null
+          transport_vehicle_no?: string | null
           updated_at?: string
           upper_id?: string | null
           upper_verified?: boolean
@@ -9529,6 +10393,486 @@ export type Database = {
         }
         Relationships: []
       }
+      transport_fee_charges: {
+        Row: {
+          amount: number
+          assignment_id: string | null
+          created_at: string
+          fee_head_id: string | null
+          id: string
+          organization_id: string
+          period_type: string
+          service_type: string
+          stop_id: string | null
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          assignment_id?: string | null
+          created_at?: string
+          fee_head_id?: string | null
+          id?: string
+          organization_id: string
+          period_type: string
+          service_type: string
+          stop_id?: string | null
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          assignment_id?: string | null
+          created_at?: string
+          fee_head_id?: string | null
+          id?: string
+          organization_id?: string
+          period_type?: string
+          service_type?: string
+          stop_id?: string | null
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transport_fee_charges_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "transport_student_assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transport_fee_charges_fee_head_id_fkey"
+            columns: ["fee_head_id"]
+            isOneToOne: false
+            referencedRelation: "fee_heads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transport_fee_charges_stop_id_fkey"
+            columns: ["stop_id"]
+            isOneToOne: false
+            referencedRelation: "transport_stops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transport_fee_charges_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students_or_clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transport_route_stops: {
+        Row: {
+          created_at: string
+          distance_from_prev: number | null
+          drop_time: string | null
+          id: string
+          organization_id: string
+          pickup_time: string | null
+          route_id: string
+          stop_id: string
+          stop_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          distance_from_prev?: number | null
+          drop_time?: string | null
+          id?: string
+          organization_id: string
+          pickup_time?: string | null
+          route_id: string
+          stop_id: string
+          stop_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          distance_from_prev?: number | null
+          drop_time?: string | null
+          id?: string
+          organization_id?: string
+          pickup_time?: string | null
+          route_id?: string
+          stop_id?: string
+          stop_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transport_route_stops_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "transport_routes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transport_route_stops_stop_id_fkey"
+            columns: ["stop_id"]
+            isOneToOne: false
+            referencedRelation: "transport_stops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transport_routes: {
+        Row: {
+          created_at: string
+          description: string | null
+          end_location: string | null
+          id: string
+          organization_id: string
+          start_location: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          end_location?: string | null
+          id?: string
+          organization_id: string
+          start_location?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          end_location?: string | null
+          id?: string
+          organization_id?: string
+          start_location?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      transport_stop_fees: {
+        Row: {
+          amount: number
+          created_at: string
+          fee_type: string
+          id: string
+          organization_id: string
+          period_type: string
+          status: string
+          stop_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          fee_type?: string
+          id?: string
+          organization_id: string
+          period_type?: string
+          status?: string
+          stop_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          fee_type?: string
+          id?: string
+          organization_id?: string
+          period_type?: string
+          status?: string
+          stop_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transport_stop_fees_stop_id_fkey"
+            columns: ["stop_id"]
+            isOneToOne: false
+            referencedRelation: "transport_stops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transport_stops: {
+        Row: {
+          address: string | null
+          area: string | null
+          created_at: string
+          id: string
+          landmark: string | null
+          latitude: number | null
+          longitude: number | null
+          name: string
+          organization_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          area?: string | null
+          created_at?: string
+          id?: string
+          landmark?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          name: string
+          organization_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          area?: string | null
+          created_at?: string
+          id?: string
+          landmark?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          name?: string
+          organization_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      transport_student_assignments: {
+        Row: {
+          assigned_at: string
+          billing_period: string | null
+          created_at: string
+          id: string
+          organization_id: string
+          route_id: string
+          service_type: string
+          status: string
+          stop_id: string
+          student_id: string
+          updated_at: string
+          vehicle_id: string | null
+        }
+        Insert: {
+          assigned_at?: string
+          billing_period?: string | null
+          created_at?: string
+          id?: string
+          organization_id: string
+          route_id: string
+          service_type?: string
+          status?: string
+          stop_id: string
+          student_id: string
+          updated_at?: string
+          vehicle_id?: string | null
+        }
+        Update: {
+          assigned_at?: string
+          billing_period?: string | null
+          created_at?: string
+          id?: string
+          organization_id?: string
+          route_id?: string
+          service_type?: string
+          status?: string
+          stop_id?: string
+          student_id?: string
+          updated_at?: string
+          vehicle_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transport_student_assignments_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "transport_routes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transport_student_assignments_stop_id_fkey"
+            columns: ["stop_id"]
+            isOneToOne: false
+            referencedRelation: "transport_stops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transport_student_assignments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students_or_clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transport_student_assignments_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "transport_vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transport_trips: {
+        Row: {
+          created_at: string
+          driver_name: string | null
+          id: string
+          notes: string | null
+          organization_id: string
+          route_id: string
+          scheduled_date: string
+          scheduled_time: string | null
+          status: string
+          trip_type: string
+          updated_at: string
+          vehicle_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          driver_name?: string | null
+          id?: string
+          notes?: string | null
+          organization_id: string
+          route_id: string
+          scheduled_date: string
+          scheduled_time?: string | null
+          status?: string
+          trip_type?: string
+          updated_at?: string
+          vehicle_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          driver_name?: string | null
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          route_id?: string
+          scheduled_date?: string
+          scheduled_time?: string | null
+          status?: string
+          trip_type?: string
+          updated_at?: string
+          vehicle_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transport_trips_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "transport_routes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transport_trips_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "transport_vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transport_vehicles: {
+        Row: {
+          capacity: number
+          created_at: string
+          gps_device_id: string | null
+          id: string
+          notes: string | null
+          organization_id: string
+          status: string
+          updated_at: string
+          vehicle_no: string
+          vehicle_title: string
+          vehicle_type: string | null
+        }
+        Insert: {
+          capacity?: number
+          created_at?: string
+          gps_device_id?: string | null
+          id?: string
+          notes?: string | null
+          organization_id: string
+          status?: string
+          updated_at?: string
+          vehicle_no: string
+          vehicle_title: string
+          vehicle_type?: string | null
+        }
+        Update: {
+          capacity?: number
+          created_at?: string
+          gps_device_id?: string | null
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          status?: string
+          updated_at?: string
+          vehicle_no?: string
+          vehicle_title?: string
+          vehicle_type?: string | null
+        }
+        Relationships: []
+      }
+      transport_vendors: {
+        Row: {
+          account_holder_name: string | null
+          account_number: string | null
+          address: string | null
+          bank_name: string | null
+          contact_person: string | null
+          created_at: string
+          email: string | null
+          gst_number: string | null
+          id: string
+          ifsc_code: string | null
+          logo_url: string | null
+          organization_id: string
+          phone: string | null
+          status: string
+          updated_at: string
+          vendor_name: string
+        }
+        Insert: {
+          account_holder_name?: string | null
+          account_number?: string | null
+          address?: string | null
+          bank_name?: string | null
+          contact_person?: string | null
+          created_at?: string
+          email?: string | null
+          gst_number?: string | null
+          id?: string
+          ifsc_code?: string | null
+          logo_url?: string | null
+          organization_id: string
+          phone?: string | null
+          status?: string
+          updated_at?: string
+          vendor_name: string
+        }
+        Update: {
+          account_holder_name?: string | null
+          account_number?: string | null
+          address?: string | null
+          bank_name?: string | null
+          contact_person?: string | null
+          created_at?: string
+          email?: string | null
+          gst_number?: string | null
+          id?: string
+          ifsc_code?: string | null
+          logo_url?: string | null
+          organization_id?: string
+          phone?: string | null
+          status?: string
+          updated_at?: string
+          vendor_name?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           core_role_id: string
@@ -9847,9 +11191,11 @@ export type Database = {
           allocation_id: string | null
           fee_head_id: string | null
           fee_head_name: string | null
+          fee_head_type: string | null
           head_balance: number | null
           head_paid_after: number | null
           head_total: number | null
+          is_recurring: boolean | null
           organization_id: string | null
           payment_amount: number | null
           payment_date: string | null
@@ -10032,12 +11378,49 @@ export type Database = {
         }
         Returns: undefined
       }
+      cron_generate_daycare_monthly_fees_all: {
+        Args: never
+        Returns: undefined
+      }
       current_academic_year: { Args: never; Returns: string }
+      daycare_recompute_invoice_total: {
+        Args: { _invoice_id: string }
+        Returns: undefined
+      }
       decrypt_aadhaar: {
         Args: { p_encrypted: string; p_org_id: string }
         Returns: string
       }
       derive_academic_year: { Args: { p_date: string }; Returns: string }
+      edit_fee_payment:
+        | {
+            Args: {
+              p_amount: number
+              p_collected_by?: string
+              p_fee_head_id: string
+              p_notes?: string
+              p_payment_date: string
+              p_payment_id: string
+              p_payment_mode: string
+              p_reason?: string
+              p_reference_number?: string
+              p_student_fee_term_id: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_amount: number
+              p_collected_by?: string
+              p_notes?: string
+              p_payment_date: string
+              p_payment_id: string
+              p_payment_mode: string
+              p_reason?: string
+              p_reference_number?: string
+            }
+            Returns: Json
+          }
       encrypt_aadhaar:
         | { Args: { p_aadhaar: string; p_org_id: string }; Returns: string }
         | {
@@ -10059,6 +11442,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      ensure_transport_fee_head: { Args: { p_org_id: string }; Returns: string }
       generate_admission_number: { Args: { p_org_id: string }; Returns: string }
       generate_cert_reference_no: {
         Args: { p_employee_id: string; p_org_id: string }
@@ -10067,6 +11451,10 @@ export type Database = {
       generate_daily_timetable: {
         Args: { p_date: string; p_day_of_week: string; p_org_id: string }
         Returns: number
+      }
+      generate_daycare_monthly_fees: {
+        Args: { p_month: string; p_org: string }
+        Returns: Json
       }
       generate_employee_id: { Args: { _org_id: string }; Returns: string }
       generate_roll_number: {
@@ -10156,6 +11544,10 @@ export type Database = {
       }
       get_parent_org_id: { Args: { _user_id: string }; Returns: string }
       get_parent_student_id: { Args: { _user_id: string }; Returns: string }
+      get_student_fee_summary: {
+        Args: { p_academic_year?: string; p_student_id: string }
+        Returns: Json
+      }
       get_student_fee_view: {
         Args: { p_academic_year: string; p_student_id: string }
         Returns: Json
@@ -10259,6 +11651,9 @@ export type Database = {
         Args: { p_override_id: string }
         Returns: Json
       }
+      next_daycare_admission_number: { Args: { _org: string }; Returns: string }
+      next_daycare_receipt_number: { Args: { _org: string }; Returns: string }
+      norm_academic_year: { Args: { p: string }; Returns: string }
       normalize_class_name: { Args: { raw: string }; Returns: string }
       parent_owns_student: {
         Args: { _student_id: string; _user_id: string }
@@ -10283,6 +11678,77 @@ export type Database = {
       recompute_fee_term_paid: {
         Args: { _term_id: string }
         Returns: undefined
+      }
+      reconcile_student_fees: {
+        Args: { p_academic_year?: string; p_student_id: string }
+        Returns: Json
+      }
+      record_daycare_payment: {
+        Args: {
+          p_amount: number
+          p_collected_by?: string
+          p_invoice_id: string
+          p_notes?: string
+          p_org: string
+          p_paid_on?: string
+          p_payment_mode: string
+          p_print_school_pan?: boolean
+          p_reference_no?: string
+        }
+        Returns: {
+          amount: number
+          collected_by: string | null
+          created_at: string
+          daycare_student_id: string
+          id: string
+          invoice_id: string | null
+          notes: string | null
+          organization_id: string
+          paid_on: string
+          payment_mode: string
+          print_school_pan: boolean
+          receipt_no: string | null
+          reference_no: string | null
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "daycare_payments"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      record_fee_payment_atomic: {
+        Args: {
+          p_amount: number
+          p_backdated_reason?: string
+          p_billing_type?: string
+          p_created_by?: string
+          p_installment_id?: string
+          p_notes?: string
+          p_organization_id: string
+          p_payment_date: string
+          p_payment_mode: string
+          p_print_school_pan?: boolean
+          p_receipt_number?: string
+          p_selected_item_ids?: string[]
+          p_selected_term_id?: string
+          p_student_id: string
+          p_term_number?: number
+        }
+        Returns: Json
+      }
+      resolve_transport_stop_fee: {
+        Args: {
+          p_period_type: string
+          p_service_type: string
+          p_stop_id: string
+        }
+        Returns: {
+          amount: number
+          period_type: string
+          status: string
+        }[]
       }
       restore_archived_record: {
         Args: { _module: string; _original_id: string; _restored_by: string }
@@ -10334,6 +11800,14 @@ export type Database = {
       }
       sync_sequences_with_data: { Args: never; Returns: undefined }
       sync_subjects_from_existing_data: { Args: never; Returns: number }
+      sync_transport_fee_charge: {
+        Args: { p_organization_id: string; p_student_id: string }
+        Returns: undefined
+      }
+      sync_transport_fee_into_billing: {
+        Args: { p_organization_id: string; p_student_id: string }
+        Returns: Json
+      }
       teacher_has_class_access: {
         Args: {
           _class_name: string
@@ -10353,6 +11827,18 @@ export type Database = {
         Returns: boolean
       }
       today_day_name: { Args: never; Returns: string }
+      update_own_student_profile: {
+        Args: {
+          p_address: string
+          p_guardian_email: string
+          p_guardian_name: string
+          p_guardian_phone: string
+          p_guardian_relation: string
+          p_medical_record: Json
+          p_phone: string
+        }
+        Returns: undefined
+      }
       validate_message_participants: {
         Args: {
           _conversation_id: string
@@ -10388,6 +11874,9 @@ export type Database = {
         | "admissions_officer"
         | "support"
         | "visa_consultant"
+        | "daycare_teacher"
+        | "daycare_caregiver"
+        | "daycare_coordinator"
       communication_channel: "email" | "sms" | "whatsapp" | "phone"
       industry_type: "education" | "visa_consultancy" | "general"
       lead_source: "meta" | "google_ads" | "manual" | "website" | "referral"
@@ -10539,6 +12028,9 @@ export const Constants = {
         "admissions_officer",
         "support",
         "visa_consultant",
+        "daycare_teacher",
+        "daycare_caregiver",
+        "daycare_coordinator",
       ],
       communication_channel: ["email", "sms", "whatsapp", "phone"],
       industry_type: ["education", "visa_consultancy", "general"],

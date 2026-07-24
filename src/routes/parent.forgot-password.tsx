@@ -2,14 +2,15 @@ import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import { KeyRound, ArrowLeft, CheckCircle2, Loader2, Eye, EyeOff } from "lucide-react";
+import { PARENT_SUPABASE_URL } from "@/lib/parent-supabase";
 
 export const Route = createFileRoute("/parent/forgot-password")({
   head: () => ({ meta: [{ title: "Reset Password — Parent Portal" }] }),
   component: ForgotPassword,
 });
 
-const SEND_OTP_URL = "https://oucnvrfbvqxbazlvvgwn.supabase.co/functions/v1/send-otp";
-const VERIFY_OTP_URL = "https://oucnvrfbvqxbazlvvgwn.supabase.co/functions/v1/verify-otp";
+const SEND_OTP_URL = `${PARENT_SUPABASE_URL}/functions/v1/send-otp`;
+const VERIFY_OTP_URL = `${PARENT_SUPABASE_URL}/functions/v1/verify-otp`;
 
 function normalizePhone(raw: string): string {
   let digits = raw.replace(/\D/g, "");
@@ -71,7 +72,7 @@ function ForgotPassword() {
       }
       setStep("otp");
     } catch {
-      setSendError("Network error. Please check your connection.");
+      setSendError("OTP service is not reachable. Check that VITE_SUPABASE_URL points to the project where send-otp is deployed.");
     } finally {
       setSendLoading(false);
     }
@@ -89,7 +90,7 @@ function ForgotPassword() {
         setVerifyError(data?.error ?? data?.message ?? "Failed to resend OTP. Please try again.");
       }
     } catch {
-      setVerifyError("Network error. Please check your connection.");
+      setVerifyError("OTP service is not reachable. Check that VITE_SUPABASE_URL points to the project where send-otp is deployed.");
     } finally {
       setResendLoading(false);
     }
@@ -124,7 +125,7 @@ function ForgotPassword() {
       }
       setStep("done");
     } catch {
-      setVerifyError("Network error. Please check your connection.");
+      setVerifyError("OTP service is not reachable. Check that VITE_SUPABASE_URL points to the project where verify-otp is deployed.");
     } finally {
       setVerifyLoading(false);
     }
