@@ -13,19 +13,20 @@ export function isBirthdayToday(dob?: string | null): boolean {
   return d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
 }
 
-// Warm pastel birthday palette (does not touch app blue theme)
-const CONFETTI_COLORS = ["#F6D365", "#FFBFA3", "#FDE4C7", "#F5C6A0", "#FFD9B8", "#E8B473"];
+// Vibrant birthday palette for the hero banner (purple / pink / magenta / gold)
+const CONFETTI_COLORS = ["#FFD93D", "#FF6BCB", "#8B5CF6", "#EC4899", "#22D3EE", "#F472B6", "#FBBF24"];
+const BALLOON_COLORS = ["#EC4899", "#3B82F6", "#FBBF24", "#F472B6", "#60A5FA", "#F59E0B"];
 
 function Confetti() {
   const pieces = useMemo(
     () =>
-      Array.from({ length: 26 }, (_, i) => ({
+      Array.from({ length: 40 }, (_, i) => ({
         id: i,
         left: Math.random() * 100,
         delay: Math.random() * 4,
         duration: 5 + Math.random() * 4,
         color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
-        size: 6 + Math.random() * 6,
+        size: 6 + Math.random() * 7,
         rotate: Math.random() * 360,
       })),
     [],
@@ -54,10 +55,12 @@ function Balloons() {
   const balloons = useMemo(
     () =>
       [
-        { left: 4, color: "#F6D365", delay: 0 },
-        { left: 14, color: "#FFBFA3", delay: 0.6 },
-        { left: 88, color: "#F5C6A0", delay: 0.3 },
-        { left: 95, color: "#E8B473", delay: 1.2 },
+        { left: 3, top: 8, color: BALLOON_COLORS[0], delay: 0, size: 44 },
+        { left: 12, top: 22, color: BALLOON_COLORS[1], delay: 0.6, size: 36 },
+        { left: 22, top: 6, color: BALLOON_COLORS[2], delay: 1.1, size: 40 },
+        { left: 60, top: 12, color: BALLOON_COLORS[3], delay: 0.3, size: 38 },
+        { left: 72, top: 4, color: BALLOON_COLORS[4], delay: 0.9, size: 42 },
+        { left: 92, top: 18, color: BALLOON_COLORS[5], delay: 1.4, size: 40 },
       ] as const,
     [],
   );
@@ -66,27 +69,47 @@ function Balloons() {
       {balloons.map((b, i) => (
         <div
           key={i}
-          className="absolute top-4"
+          className="absolute"
           style={{
             left: `${b.left}%`,
+            top: `${b.top}%`,
             animation: `bd-float 5s ease-in-out ${b.delay}s infinite`,
           }}
         >
           <div
-            className="h-12 w-10 rounded-full shadow-lg"
-            style={{ background: `radial-gradient(circle at 30% 30%, #fff8, ${b.color})` }}
+            className="rounded-full shadow-xl"
+            style={{
+              width: b.size,
+              height: b.size * 1.2,
+              background: `radial-gradient(circle at 30% 30%, rgba(255,255,255,0.7), ${b.color} 65%)`,
+            }}
           />
-          <div className="mx-auto h-8 w-px bg-[#E8B473]/40" />
+          <div className="mx-auto h-8 w-px bg-white/40" />
         </div>
       ))}
     </div>
   );
 }
 
+function Ribbons() {
+  return (
+    <svg
+      className="pointer-events-none absolute inset-0 h-full w-full"
+      viewBox="0 0 800 240"
+      preserveAspectRatio="none"
+      aria-hidden="true"
+    >
+      <path d="M0,60 Q200,10 400,80 T800,50" stroke="#FBBF24" strokeWidth="3" fill="none" opacity="0.7" />
+      <path d="M0,180 Q200,220 400,150 T800,200" stroke="#F472B6" strokeWidth="3" fill="none" opacity="0.7" />
+      <path d="M0,120 Q200,80 400,140 T800,110" stroke="#22D3EE" strokeWidth="2" fill="none" opacity="0.5" />
+    </svg>
+  );
+}
+
 function Sparkle({ style }: { style: React.CSSProperties }) {
   return (
     <Sparkles
-      className="absolute text-[#F6D365]"
+      className="absolute text-yellow-200 drop-shadow"
       style={style}
       aria-hidden="true"
     />
@@ -118,73 +141,85 @@ export function BirthdayBanner({
         }
         @keyframes bd-shimmer {
           0%, 100% { opacity: 0.6; transform: scale(1); }
-          50% { opacity: 1; transform: scale(1.2); }
+          50% { opacity: 1; transform: scale(1.25); }
         }
       `}</style>
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="relative overflow-hidden rounded-3xl border border-[#F3D9BF]"
+        className="relative overflow-hidden rounded-3xl"
         style={{
           background:
-            "linear-gradient(135deg, #FFFDF8 0%, #FFF7F1 40%, #FFF0E6 100%)",
-          minHeight: 220,
-          boxShadow: "0 20px 50px -20px rgba(232, 180, 115, 0.35)",
+            "linear-gradient(120deg, #4C1D95 0%, #7C3AED 30%, #C026D3 60%, #EC4899 100%)",
+          minHeight: 240,
+          boxShadow: "0 25px 60px -20px rgba(124, 58, 237, 0.55)",
         }}
       >
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(circle at 20% 30%, rgba(216,180,254,0.35), transparent 50%), radial-gradient(circle at 80% 70%, rgba(244,114,182,0.35), transparent 55%)",
+          }}
+        />
+        <Ribbons />
         <Confetti />
         <Balloons />
-        <Sparkle style={{ top: "20%", left: "40%", width: 18, height: 18, animation: "bd-shimmer 2s ease-in-out infinite" }} />
-        <Sparkle style={{ top: "60%", left: "55%", width: 14, height: 14, animation: "bd-shimmer 2.5s ease-in-out 0.5s infinite" }} />
-        <Sparkle style={{ top: "30%", right: "30%", width: 20, height: 20, animation: "bd-shimmer 3s ease-in-out 1s infinite" }} />
+        <Sparkle style={{ top: "18%", left: "42%", width: 18, height: 18, animation: "bd-shimmer 2s ease-in-out infinite" }} />
+        <Sparkle style={{ top: "62%", left: "48%", width: 14, height: 14, animation: "bd-shimmer 2.5s ease-in-out 0.5s infinite" }} />
+        <Sparkle style={{ top: "28%", right: "38%", width: 20, height: 20, animation: "bd-shimmer 3s ease-in-out 1s infinite" }} />
+        <Sparkle style={{ bottom: "20%", left: "30%", width: 16, height: 16, animation: "bd-shimmer 2.2s ease-in-out 0.8s infinite" }} />
 
         <div className="relative z-10 flex flex-col items-start gap-5 p-6 sm:p-8 md:flex-row md:items-center">
-          {/* Student photo */}
           <div className="shrink-0">
             {student.photo_url ? (
               <img
                 src={student.photo_url ?? undefined}
                 alt={student.name ?? ""}
-                className="h-28 w-28 rounded-full border-4 border-white object-cover shadow-2xl ring-2 ring-[#F6D365]/50 sm:h-32 sm:w-32"
+                className="h-28 w-28 rounded-full border-4 border-white object-cover shadow-2xl ring-4 ring-yellow-300/60 sm:h-32 sm:w-32"
               />
             ) : (
-              <div className="flex h-28 w-28 items-center justify-center rounded-full border-4 border-white bg-[#FFF0E6] text-4xl font-bold text-[#B7791F] shadow-2xl sm:h-32 sm:w-32">
+              <div className="flex h-28 w-28 items-center justify-center rounded-full border-4 border-white bg-white/20 text-4xl font-bold text-white shadow-2xl ring-4 ring-yellow-300/60 sm:h-32 sm:w-32">
                 {(student.name ?? "?").charAt(0)}
               </div>
             )}
           </div>
 
-          {/* Text */}
-          <div className="min-w-0 flex-1">
-            <div className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-[#F6D365] px-3 py-1 text-xs font-bold text-[#7C4A03] shadow-md">
+          <div className="min-w-0 flex-1 text-white">
+            <div className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-yellow-300 px-3 py-1 text-xs font-bold text-[#7C2D12] shadow-md">
               <Cake className="h-3.5 w-3.5" /> Happy Birthday!
             </div>
-            <h1 className="mb-2 text-2xl font-extrabold text-[#4A2E10] sm:text-3xl md:text-4xl">
+            <h1 className="mb-2 text-2xl font-extrabold tracking-tight drop-shadow-lg sm:text-3xl md:text-4xl">
               {student.name ?? "Student"} 🎂
             </h1>
-            <p className="max-w-xl text-sm leading-relaxed text-[#6B4A2B] sm:text-base">
-              Wishing you a day filled with happiness, success, laughter, and
-              beautiful memories.
+            <p className="max-w-xl text-sm leading-relaxed text-white/90 sm:text-base">
+              Wishing you a day filled with happiness, love and lots of sweet moments! 🎉
             </p>
-            <p className="mt-1 text-xs text-[#8A6A46] sm:text-sm">
-              With love from the <span className="font-semibold">{schoolName}</span> Family ❤️
+            <p className="mt-1 text-xs text-white/80 sm:text-sm">
+              From all of us at <span className="font-semibold">{schoolName}</span> ❤️
             </p>
 
             <div className="mt-4 flex flex-wrap gap-2">
               <button
                 type="button"
                 onClick={onOpenGreeting}
-                className="inline-flex items-center gap-2 rounded-xl bg-[#F6D365] px-4 py-2.5 text-sm font-bold text-[#7C4A03] shadow-lg transition hover:scale-105 hover:bg-[#F0C34C]"
+                className="inline-flex items-center gap-2 rounded-full bg-yellow-300 px-5 py-2.5 text-sm font-bold text-[#7C2D12] shadow-lg transition hover:scale-105 hover:bg-yellow-200"
               >
-                <Gift className="h-4 w-4" /> View Birthday Greeting
+                <Gift className="h-4 w-4" /> View Birthday Card
+              </button>
+              <button
+                type="button"
+                onClick={onOpenGreeting}
+                className="inline-flex items-center gap-2 rounded-full border border-white/60 bg-white/10 px-5 py-2.5 text-sm font-semibold text-white shadow-sm backdrop-blur-sm transition hover:bg-white/20"
+              >
+                Continue to Dashboard
               </button>
             </div>
           </div>
 
-          {/* Cake illustration */}
-          <div className="hidden shrink-0 md:block" aria-hidden="true">
-            <CakeIllustration />
+          <div className="hidden shrink-0 md:block text-7xl drop-shadow-2xl" aria-hidden="true">
+            🎂
           </div>
         </div>
       </motion.div>
