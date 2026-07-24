@@ -208,13 +208,6 @@ export function BirthdayBanner({
               >
                 <Gift className="h-4 w-4" /> View Birthday Card
               </button>
-              <button
-                type="button"
-                onClick={onOpenGreeting}
-                className="inline-flex items-center gap-2 rounded-full border border-white/60 bg-white/10 px-5 py-2.5 text-sm font-semibold text-white shadow-sm backdrop-blur-sm transition hover:bg-white/20"
-              >
-                Continue to Dashboard
-              </button>
             </div>
           </div>
 
