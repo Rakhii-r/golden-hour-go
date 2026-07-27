@@ -4,7 +4,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   MessageSquare,
   Send,
-  Paperclip,
   Search,
   ArrowLeft,
   Check,
