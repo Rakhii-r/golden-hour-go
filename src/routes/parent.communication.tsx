@@ -423,22 +423,19 @@ function MessageComposer({
   onSend,
   sending,
 }: {
-  onSend: (text: string, file?: File | null) => Promise<void>;
+  onSend: (text: string) => Promise<void>;
   sending: boolean;
 }) {
   const [text, setText] = useState("");
-  const [file, setFile] = useState<File | null>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
   const textRef = useRef<HTMLTextAreaElement>(null);
 
-  const canSend = (text.trim().length > 0 || !!file) && !sending;
+  const canSend = text.trim().length > 0 && !sending;
 
   const handleSend = async () => {
     if (!canSend) return;
     const msg = text.trim();
     setText("");
-    setFile(null);
-    await onSend(msg || " ", file);
+    await onSend(msg);
     textRef.current?.focus();
   };
 
@@ -451,39 +448,7 @@ function MessageComposer({
 
   return (
     <div className="border-t border-gray-100 bg-white px-4 py-3">
-      {file && (
-        <div className="mb-2 flex items-center gap-2 rounded-xl bg-blue-50 px-3 py-2">
-          {file.type.startsWith("image/") ? (
-            <ImageIcon className="h-4 w-4 shrink-0 text-[#155EEF]" />
-          ) : (
-            <FileText className="h-4 w-4 shrink-0 text-[#155EEF]" />
-          )}
-          <span className="min-w-0 flex-1 truncate text-xs font-medium text-[#155EEF]">
-            {file.name}
-          </span>
-          <button onClick={() => setFile(null)} className="shrink-0">
-            <X className="h-3.5 w-3.5 text-gray-400 hover:text-red-500" />
-          </button>
-        </div>
-      )}
-
       <div className="flex items-end gap-2">
-        {/* Attachment */}
-        <button
-          onClick={() => fileRef.current?.click()}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-gray-200 text-gray-400 transition hover:border-[#155EEF] hover:text-[#155EEF]"
-          aria-label="Attach file"
-        >
-          <Paperclip className="h-4 w-4" />
-        </button>
-        <input
-          ref={fileRef}
-          type="file"
-          className="hidden"
-          accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp"
-          onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-        />
-
         {/* Text input */}
         <textarea
           ref={textRef}
