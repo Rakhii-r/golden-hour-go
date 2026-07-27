@@ -503,7 +503,7 @@ function ChatArea({
   loading: boolean;
   sending: boolean;
   parentId: string;
-  onSend: (text: string, file?: File | null) => Promise<void>;
+  onSend: (text: string) => Promise<void>;
   onBack: () => void;
 }) {
   const bottomRef = useRef<HTMLDivElement>(null);
