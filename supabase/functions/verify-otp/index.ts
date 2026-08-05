@@ -1,138 +1,117 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import {
+  admin,
+  corsHeaders,
+  findParentAccount,
+  getTwilioCreds,
+  json,
+  maskPhone,
+  randomToken,
+  RESET_TOKEN_TTL_MINUTES,
+  sha256,
+  toE164,
+  twilioAuth,
+} from "../_shared/parent-reset.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
-
-// Strip non-digits and keep the last 10 digits (the Indian subscriber number).
-// Works for E.164 (+919800000114 → "9800000114"), clean local (9800000114 → "9800000114"),
-// and trunk-prefixed local (0810673899 → "0810673899").
-function last10(s: string): string {
-  return s.replace(/\D/g, "").slice(-10);
-}
-
+/**
+ * Step 2 of the parent forgot-password flow: verify the OTP only.
+ * Input:  { admissionNumber, code }
+ * Output: { success, resetToken, maskedPhone }
+ * No password is accepted here — the caller must exchange the short-lived
+ * resetToken at reset-parent-password to set the new password.
+ */
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    const { phone, code, newPassword } = await req.json() as {
-      phone?: string;
+    const { admissionNumber, code } = (await req.json()) as {
+      admissionNumber?: string;
       code?: string;
-      newPassword?: string;
     };
 
-    if (!phone || !/^\+[1-9]\d{6,14}$/.test(phone)) {
-      return json({ error: "Phone must be in E.164 format (e.g. +919876543210)" }, 400);
+    if (!admissionNumber || !admissionNumber.trim()) {
+      return json({ error: "Admission Number is required." }, 400);
     }
-    if (!code || code.trim().length === 0) {
-      return json({ error: "OTP code is required" }, 400);
-    }
-    if (!newPassword || newPassword.length < 8) {
-      return json({ error: "New password must be at least 8 characters" }, 400);
+    if (!code || !/^\d{4,8}$/.test(code.trim())) {
+      return json({ error: "Invalid OTP." }, 400);
     }
 
-    const incomingLast10 = last10(phone);
+    const supabase = admin();
 
-    // SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY always come from env (Supabase's own keys).
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-    );
-
-    // Look up parent first — we need organization_id to fetch per-org Twilio creds.
-    // ilike '%last10' pre-filter + code-side last-10 comparison handles stored formats
-    // and duplicate rows (same phone, multiple children share same user_id).
-    const { data: rows, error: dbErr } = await supabase
-      .from("parent_accounts")
-      .select("user_id, recovery_phone, organization_id")
-      .ilike("recovery_phone", `%${incomingLast10}`);
-
-    if (dbErr) {
-      console.error("DB lookup error", dbErr);
-      return json({ error: "Database error" }, 500);
+    const { account, error: lookupErr } = await findParentAccount(supabase, admissionNumber);
+    if (lookupErr) return json({ error: lookupErr.message }, lookupErr.status);
+    if (!account!.user_id) {
+      return json({ error: "No user account linked to this admission number." }, 404);
+    }
+    if (!account!.recovery_phone) {
+      return json({ error: "Registered mobile number not found." }, 400);
     }
 
-    const match = (rows ?? []).find(
-      (r) => r.recovery_phone != null && last10(r.recovery_phone) === incomingLast10,
-    );
+    const e164 = toE164(account!.recovery_phone);
+    if (!e164) return json({ error: "Registered mobile number not found." }, 400);
 
-    if (!match?.user_id) {
-      return json({ error: "No user account linked to this phone number" }, 404);
+    const credsResult = await getTwilioCreds(supabase, account!.organization_id);
+    if ("error" in credsResult) {
+      return json({ error: credsResult.error.message }, credsResult.error.status);
     }
+    const { account_sid, auth_token, verify_sid } = credsResult.creds;
 
-    // ── Per-org Twilio creds ──────────────────────────────────────────────────
-    // Failure points:
-    //   1. No row in integration_credentials for this org → 400
-    //   2. Row exists but verify_sid / account_sid / auth_token is empty → 400
-    //   3. DB error on the creds query → 500
-    const { data: credsRow, error: credsErr } = await supabase
-      .from("integration_credentials")
-      .select("credentials")
-      .eq("organization_id", match.organization_id)
-      .eq("platform", "twilio_whatsapp")
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (credsErr) {
-      console.error("Creds lookup error", credsErr);
-      return json({ error: "Database error" }, 500);
-    }
-
-    const creds = (credsRow?.credentials ?? {}) as Record<string, string>;
-    const { account_sid, auth_token, verify_sid } = creds;
-
-    if (!account_sid || !auth_token || !verify_sid) {
-      return json({ error: "OTP not configured for this organization" }, 400);
-    }
-    // ─────────────────────────────────────────────────────────────────────────
-
-    // Verify OTP with Twilio — only proceed to password reset on "approved".
     const checkRes = await fetch(
       `https://verify.twilio.com/v2/Services/${verify_sid}/VerificationCheck`,
       {
         method: "POST",
         headers: {
-          Authorization: "Basic " + btoa(`${account_sid}:${auth_token}`),
+          Authorization: twilioAuth(account_sid, auth_token),
           "Content-Type": "application/x-www-form-urlencoded",
         },
-        body: new URLSearchParams({ To: phone, Code: code }),
+        body: new URLSearchParams({ To: e164, Code: code.trim() }),
       },
     );
 
-    const checkData = await checkRes.json();
+    const checkData = await checkRes.json().catch(() => ({}));
+
+    if (checkRes.status === 404) {
+      return json({ error: "OTP has expired. Please request a new OTP." }, 400);
+    }
+    if (checkRes.status === 429 || checkData?.code === 60202) {
+      return json({ error: "Too many attempts. Please request a new OTP." }, 429);
+    }
     if (!checkRes.ok || checkData.status !== "approved") {
-      return json({ error: "Invalid or expired OTP" }, 400);
+      return json({ error: "Invalid OTP." }, 400);
     }
 
-    // SERVICE_ROLE key (from env) is used here — never exposed to the client.
-    const { error: authErr } = await supabase.auth.admin.updateUserById(
-      match.user_id,
-      { password: newPassword },
-    );
+    // Issue a short-lived, single-use reset token bound to this parent account.
+    const token = randomToken();
+    const tokenHash = await sha256(token);
+    const expiresAt = new Date(Date.now() + RESET_TOKEN_TTL_MINUTES * 60_000).toISOString();
 
-    if (authErr) {
-      console.error("Auth update error", authErr);
-      return json({ error: "Failed to update password" }, 500);
+    // Invalidate any previous outstanding tokens for this account.
+    await supabase
+      .from("parent_password_resets")
+      .update({ consumed_at: new Date().toISOString() })
+      .eq("parent_account_id", account!.id)
+      .is("consumed_at", null);
+
+    const { error: insertErr } = await supabase.from("parent_password_resets").insert({
+      parent_account_id: account!.id,
+      otp_hash: tokenHash,
+      channel: "sms",
+      destination: maskPhone(account!.recovery_phone),
+      expires_at: expiresAt,
+    });
+
+    if (insertErr) {
+      console.error("reset token insert error", insertErr);
+      return json({ error: "Could not start password reset. Please try again." }, 500);
     }
 
-    // Force-invalidate all existing sessions so the parent must re-login with the new password.
-    // A failure here is non-fatal — the password was already changed successfully.
-    const { error: signOutErr } = await supabase.auth.admin.signOut(match.user_id, { scope: "global" });
-    if (signOutErr) console.error("Session invalidation error (non-fatal)", signOutErr);
-
-    return json({ success: true, message: "Password updated successfully" });
+    return json({
+      success: true,
+      resetToken: token,
+      maskedPhone: maskPhone(account!.recovery_phone),
+      expiresInMinutes: RESET_TOKEN_TTL_MINUTES,
+    });
   } catch (e) {
     console.error("verify-otp unhandled error", e);
     return json({ error: "Internal server error" }, 500);
   }
 });
-
-function json(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
-}
