@@ -11274,6 +11274,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      _report_card_detail_grade: {
+        Args: { p_organization_id: string; p_pct: number }
+        Returns: string
+      }
       admit_student_atomic: {
         Args: {
           p_admitted_by?: string
@@ -11317,12 +11321,20 @@ export type Database = {
         Returns: number
       }
       archive_organization: {
+        Args: { _archived_by?: string; _org_id: string }
+        Returns: undefined
+      }
+      archive_organization_impl: {
         Args: { _archived_by: string; _org_id: string }
         Returns: undefined
       }
       archive_override: {
         Args: { p_override_id: string; p_reason?: string }
         Returns: string
+      }
+      backfill_daycare_monthly_fees: {
+        Args: { p_org: string; p_student?: string; p_upto?: string }
+        Returns: Json
       }
       backfill_legacy_payments: { Args: never; Returns: Json }
       backfill_student_fee_term_items: {
@@ -11544,6 +11556,15 @@ export type Database = {
       }
       get_parent_org_id: { Args: { _user_id: string }; Returns: string }
       get_parent_student_id: { Args: { _user_id: string }; Returns: string }
+      get_report_card_detail: {
+        Args: {
+          p_academic_year: string
+          p_exam_type_id: string
+          p_organization_id: string
+          p_student_id: string
+        }
+        Returns: Json
+      }
       get_student_fee_summary: {
         Args: { p_academic_year?: string; p_student_id: string }
         Returns: Json
@@ -11600,6 +11621,14 @@ export type Database = {
       }
       has_role_by_name: {
         Args: { _role_name: string; _user_id: string }
+        Returns: boolean
+      }
+      has_role_in_org: {
+        Args: {
+          _org_id: string
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
         Returns: boolean
       }
       is_class_teacher: {
@@ -11716,6 +11745,41 @@ export type Database = {
           to: "daycare_payments"
           isOneToOne: true
           isSetofReturn: false
+        }
+      }
+      record_daycare_payment_fifo: {
+        Args: {
+          p_amount: number
+          p_collected_by?: string
+          p_notes?: string
+          p_org: string
+          p_paid_on?: string
+          p_payment_mode: string
+          p_print_school_pan?: boolean
+          p_reference_no?: string
+          p_student: string
+        }
+        Returns: {
+          amount: number
+          collected_by: string | null
+          created_at: string
+          daycare_student_id: string
+          id: string
+          invoice_id: string | null
+          notes: string | null
+          organization_id: string
+          paid_on: string
+          payment_mode: string
+          print_school_pan: boolean
+          receipt_no: string | null
+          reference_no: string | null
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "daycare_payments"
+          isOneToOne: false
+          isSetofReturn: true
         }
       }
       record_fee_payment_atomic: {
