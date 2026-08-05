@@ -1,0 +1,2 @@
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.parent_password_resets TO service_role;
+CREATE INDEX IF NOT EXISTS parent_password_resets_account_hash_idx ON public.parent_password_resets (parent_account_id, otp_hash);
