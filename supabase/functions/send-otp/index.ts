@@ -1,111 +1,74 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import {
+  admin,
+  corsHeaders,
+  findParentAccount,
+  getTwilioCreds,
+  json,
+  maskPhone,
+  OTP_TTL_MINUTES,
+  toE164,
+  twilioAuth,
+} from "../_shared/parent-reset.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
-
-// Strip non-digits and keep the last 10 digits (the Indian subscriber number).
-// Works for E.164 (+919800000114 → "9800000114"), clean local (9800000114 → "9800000114"),
-// and trunk-prefixed local (0810673899 → "0810673899").
-function last10(s: string): string {
-  return s.replace(/\D/g, "").slice(-10);
-}
-
+/**
+ * Step 1 of the parent forgot-password flow.
+ * Input:  { admissionNumber }
+ * Output: { success, maskedPhone, expiresInMinutes }
+ * The full mobile number is never returned to the client.
+ */
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    const { phone } = await req.json() as { phone?: string };
-
-    if (!phone || !/^\+[1-9]\d{6,14}$/.test(phone)) {
-      return json({ error: "Phone must be in E.164 format (e.g. +919876543210)" }, 400);
+    const { admissionNumber } = (await req.json()) as { admissionNumber?: string };
+    if (!admissionNumber || !admissionNumber.trim()) {
+      return json({ error: "Admission Number is required." }, 400);
     }
 
-    const incomingLast10 = last10(phone);
+    const supabase = admin();
 
-    // SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY always come from env (Supabase's own keys).
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-    );
+    const { account, error: lookupErr } = await findParentAccount(supabase, admissionNumber);
+    if (lookupErr) return json({ error: lookupErr.message }, lookupErr.status);
 
-    // ilike '%last10' is a cheap pre-filter; exact last-10 comparison in code handles
-    // trunk-zero numbers (e.g. 0810673899) and duplicate rows (same phone, multiple children).
-    const { data: rows, error: dbErr } = await supabase
-      .from("parent_accounts")
-      .select("id, recovery_phone, organization_id")
-      .ilike("recovery_phone", `%${incomingLast10}`);
-
-    if (dbErr) {
-      console.error("DB lookup error", dbErr);
-      return json({ error: "Database error" }, 500);
+    if (!account!.recovery_phone || !account!.recovery_phone.trim()) {
+      return json({ error: "Registered mobile number not found." }, 400);
     }
 
-    const match = (rows ?? []).find(
-      (r) => r.recovery_phone != null && last10(r.recovery_phone) === incomingLast10,
-    );
+    const e164 = toE164(account!.recovery_phone);
+    if (!e164) return json({ error: "Registered mobile number not found." }, 400);
 
-    if (!match) {
-      return json({ error: "Phone number not registered" }, 404);
+    const credsResult = await getTwilioCreds(supabase, account!.organization_id);
+    if ("error" in credsResult) {
+      return json({ error: credsResult.error.message }, credsResult.error.status);
     }
-
-    // ── Per-org Twilio creds ──────────────────────────────────────────────────
-    // Failure points:
-    //   1. No row in integration_credentials for this org → 400
-    //   2. Row exists but verify_sid / account_sid / auth_token is empty → 400
-    //   3. DB error on the creds query → 500
-    const { data: credsRow, error: credsErr } = await supabase
-      .from("integration_credentials")
-      .select("credentials")
-      .eq("organization_id", match.organization_id)
-      .eq("platform", "twilio_whatsapp")
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (credsErr) {
-      console.error("Creds lookup error", credsErr);
-      return json({ error: "Database error" }, 500);
-    }
-
-    const creds = (credsRow?.credentials ?? {}) as Record<string, string>;
-    const { account_sid, auth_token, verify_sid } = creds;
-
-    if (!account_sid || !auth_token || !verify_sid) {
-      return json({ error: "OTP not configured for this organization" }, 400);
-    }
-    // ─────────────────────────────────────────────────────────────────────────
+    const { account_sid, auth_token, verify_sid } = credsResult.creds;
 
     const twilioRes = await fetch(
       `https://verify.twilio.com/v2/Services/${verify_sid}/Verifications`,
       {
         method: "POST",
         headers: {
-          Authorization: "Basic " + btoa(`${account_sid}:${auth_token}`),
+          Authorization: twilioAuth(account_sid, auth_token),
           "Content-Type": "application/x-www-form-urlencoded",
         },
-        body: new URLSearchParams({ To: phone, Channel: "sms" }),
+        body: new URLSearchParams({ To: e164, Channel: "sms" }),
       },
     );
 
     if (!twilioRes.ok) {
-      const err = await twilioRes.json();
+      const err = await twilioRes.json().catch(() => ({}));
       console.error("Twilio send error", err);
       return json({ error: err?.message ?? "Failed to send OTP" }, 502);
     }
 
-    return json({ success: true, message: "OTP sent" });
+    return json({
+      success: true,
+      maskedPhone: maskPhone(account!.recovery_phone),
+      expiresInMinutes: OTP_TTL_MINUTES,
+      message: "OTP sent",
+    });
   } catch (e) {
     console.error("send-otp unhandled error", e);
     return json({ error: "Internal server error" }, 500);
   }
 });
-
-function json(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
-}
