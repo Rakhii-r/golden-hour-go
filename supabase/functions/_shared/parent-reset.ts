@@ -63,7 +63,7 @@ export async function findParentAccount(
   const { data: rows, error } = await supabase
     .from("parent_accounts")
     .select("id, user_id, organization_id, admission_number, recovery_phone")
-    .or(`admission_number.eq.${needle},admission_number.eq.${needle.toUpperCase()},admission_number.eq.${needle.toLowerCase()}`)
+    .in("admission_number", [needle, needle.toUpperCase(), needle.toLowerCase()])
     .order("created_at", { ascending: false });
 
   if (error) {
