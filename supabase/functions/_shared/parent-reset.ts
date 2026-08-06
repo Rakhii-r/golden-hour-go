@@ -58,10 +58,12 @@ export async function findParentAccount(
   const needle = admissionNumber.trim();
   if (!needle) return { error: { message: "Admission Number is required.", status: 400 } };
 
+  // Exact (case-insensitive) match only — never LIKE/ILIKE, so wildcard
+  // metacharacters (% and _) in user input cannot match other accounts.
   const { data: rows, error } = await supabase
     .from("parent_accounts")
     .select("id, user_id, organization_id, admission_number, recovery_phone")
-    .ilike("admission_number", needle)
+    .or(`admission_number.eq.${needle},admission_number.eq.${needle.toUpperCase()},admission_number.eq.${needle.toLowerCase()}`)
     .order("created_at", { ascending: false });
 
   if (error) {
